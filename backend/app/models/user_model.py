@@ -1,19 +1,24 @@
-from beanie import Document
-from pydantic import EmailStr, Field
-from typing import Optional, List
+"""User model with Google OAuth support."""
 from datetime import datetime
 from enum import Enum
+from typing import Optional, List
+
+from beanie import Document
+from pydantic import EmailStr, Field
 
 class UserRole(str, Enum):
+    """User role enumeration."""
     USER = "user"
     NUTRITIONIST = "nutritionist"
     ADMIN = "admin"
 
 class AuthProvider(str, Enum):
+    """Authentication provider enumeration."""
     GOOGLE = "google"
     EMAIL = "email"
 
 class User(Document):
+    """User document with authentication and profile information."""
     email: EmailStr
     full_name: str
     picture: Optional[str] = None
@@ -29,6 +34,7 @@ class User(Document):
     health_goals: Optional[List[str]] = []
     
     class Settings:
+        """Beanie document settings."""
         name = "users"
         indexes = [
             "email",

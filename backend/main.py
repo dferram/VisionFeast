@@ -7,19 +7,18 @@ from app.core.config import settings
 
 app = FastAPI(
     title="VisionFeast API",
-    description="""
-    ## 🍽️ VisionFeast - Análisis Nutricional con IA
+    description="""## VisionFeast - Análisis Nutricional con IA
     
     API completa para análisis nutricional inteligente usando Google Gemini AI.
     
     ### Características principales:
     
-    * **🔐 Autenticación Google OAuth** - Login seguro con Google
-    * **📸 Análisis de Comidas con IA** - Sube fotos y obtén análisis nutricional automático
-    * **🤖 Coach Virtual Personalizado** - Retroalimentación inmediata sobre tus comidas
-    * **👨‍🍳 Generador de Recetas Inteligente** - Recetas basadas en tus ingredientes y objetivos
-    * **📊 Planes Dinámicos** - Planes de nutrición y entrenamiento personalizados
-    * **🔍 Análisis de Patrones** - Detección de comportamientos alimentarios
+    * Autenticación Google OAuth - Login seguro con Google
+    * Análisis de Comidas con IA - Sube fotos y obtén análisis nutricional automático
+    * Coach Virtual Personalizado - Retroalimentación inmediata sobre tus comidas
+    * Generador de Recetas Inteligente - Recetas basadas en tus ingredientes y objetivos
+    * Planes Dinámicos - Planes de nutrición y entrenamiento personalizados
+    * Análisis de Patrones - Detección de comportamientos alimentarios
     
     ### Endpoints de Prueba:
     

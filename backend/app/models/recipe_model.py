@@ -27,7 +27,7 @@ class Recipe(Document):
     creador_id: Optional[PydanticObjectId] = None
     detalles: Detalles
     nutricion: Nutricion
-    
+
     class Settings:
         """Beanie document settings."""
         name = "recipes"
