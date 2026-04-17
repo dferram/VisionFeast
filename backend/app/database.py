@@ -1,24 +1,23 @@
 from motor.motor_asyncio import AsyncIOMotorClient
-import os
-from dotenv import load_dotenv
-
-load_dotenv()
-
-# Configuración de MongoDB
-MONGODB_URI = os.getenv("MONGODB_URI", "mongodb://localhost:27017/visionfeast")
-DATABASE_NAME = "visionfeast"
+from beanie import init_beanie
+from app.core.config import settings
+from app.models.user_model import User
 
 class Database:
     client: AsyncIOMotorClient = None
-    db = None
 
 db = Database()
 
 async def connect_to_mongo():
-    """Establece la conexión con MongoDB"""
-    db.client = AsyncIOMotorClient(MONGODB_URI)
-    db.db = db.client[DATABASE_NAME]
-    print(f"✅ Conectado a MongoDB: {DATABASE_NAME}")
+    """Establece la conexión con MongoDB y inicializa Beanie"""
+    db.client = AsyncIOMotorClient(settings.MONGODB_URI)
+    
+    await init_beanie(
+        database=db.client.get_default_database(),
+        document_models=[User]
+    )
+    
+    print(f"✅ Conectado a MongoDB y Beanie inicializado")
 
 async def close_mongo_connection():
     """Cierra la conexión con MongoDB"""
