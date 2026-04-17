@@ -4,14 +4,17 @@ FROM node:20-alpine AS builder
 # Establecer directorio de trabajo
 WORKDIR /app
 
-# Copiar archivos de dependencias
+# Copiar archivos de dependencias (se cachea si no cambian)
 COPY package*.json ./
 
-# Instalar dependencias
-RUN npm ci
+# Instalar dependencias (se cachea si package.json no cambia)
+RUN npm ci --prefer-offline --no-audit
+
+# Copiar archivos de configuración
+COPY vite.config.js tailwind.config.js postcss.config.js index.html ./
 
 # Copiar código fuente
-COPY . .
+COPY src ./src
 
 # Build de producción
 RUN npm run build
