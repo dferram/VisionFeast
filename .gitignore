@@ -14,8 +14,44 @@ venv.bak/
 node_modules/
 dist/
 build/
-.DS_Store
 
 # IDEs
 .vscode/
 .idea/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Testing & Coverage (Python/JS)
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+.eslintcache
+
+# Vite/Frontend
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+dist-ssr/
+*.tsbuildinfo
+
+# OS - Windows
+Thumbs.db
+desktop.ini
+
+# OS - macOS
+.DS_Store
+.AppleDouble
+.LSOverride
