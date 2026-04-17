@@ -10,8 +10,8 @@ from app.models.recipe_model import Recipe
 load_dotenv()
 
 # Configuración de MongoDB
-MONGODB_URI = os.getenv("MONGODB_URI", "mongodb://localhost:27017/visionfeast")
-DATABASE_NAME = "visionfeast"
+MONGODB_URI = os.getenv("MONGODB_URI", "mongodb://localhost:27017/visionfeast_db")
+DATABASE_NAME = os.getenv("DATABASE_NAME", "visionfeast_db")
 
 class Database:
     client: AsyncIOMotorClient = None
