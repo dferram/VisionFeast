@@ -283,3 +283,23 @@ plans
 - **Almacenamiento de archivos:** Azure Blob Storage (`visionfeast.blob.core.windows.net`)
 - **IA:** Gemini para análisis de comidas y generación de insights
 - **Macros:** Formato abreviado `p` (proteínas), `c` (carbohidratos), `g` (grasas)
+
+🤖 Funciones de Gemini para el Usuario (Paciente)
+Análisis de Visión Nutricional: Gemini procesa la fotografía de la comida para identificar los alimentos y estimar automáticamente las calorías y los macronutrientes (proteínas, carbohidratos y grasas).
+
+Generación de "Coach Insights": Tras el análisis, la IA genera un comentario de retroalimentación inmediata (en texto, que luego puede procesar ElevenLabs) sobre si la comida se alinea con los objetivos del usuario.
+
+Creador de Recetas Inteligentes: Gemini utiliza los ingredientes detectados o las preferencias del usuario para proponer instrucciones de cocina detalladas y su información nutricional.
+
+Sugerencia de Planes Dinámicos: La IA puede proponer borradores de planes semanales de nutrición o rutinas de ejercicio basados en la meta del usuario (subir, bajar o mantener peso).
+
+🏥 Funciones de Gemini para el Profesional (Apoyo al Especialista)
+Pre-validación de Planes: Gemini genera una base de entrenamiento o dieta que el profesional recibe con el estado "pendiente de revisión", permitiéndole ahorrar tiempo en la creación desde cero.
+
+Detección de Riesgos en el Contexto Médico: La IA filtra las sugerencias basándose en el medical_context del usuario (por ejemplo, evitar ciertos alimentos si hay alergias o ejercicios si hay lesiones) para que el profesional solo valide lo seguro.
+
+Análisis de Patrones para Alertas:
+
+Para el Psicólogo: Gemini puede analizar la frecuencia y el tipo de registros para detectar patrones de conducta que sugieran ansiedad o trastornos alimentarios.
+
+Para el Entrenador: Evalúa si el progreso físico se ha estancado y sugiere ajustes técnicos en las rutinas de ejercicio.
