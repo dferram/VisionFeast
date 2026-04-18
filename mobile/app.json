@@ -5,16 +5,46 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
+    "icon": "./assets/icon.png",
     "splash": {
+      "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#65A30D"
     },
+    "updates": {
+      "fallbackToCacheTimeout": 0
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.visionfeast.app"
+      "bundleIdentifier": "com.visionfeast.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "VisionFeast necesita acceso a la cámara para analizar tus comidas.",
+        "NSPhotoLibraryUsageDescription": "VisionFeast necesita acceso a tus fotos para analizar imágenes de comida."
+      }
     },
     "android": {
-      "package": "com.visionfeast.app"
+      "package": "com.visionfeast.app",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#65A30D"
+      },
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "your-project-id-will-be-here"
+      }
     }
   }
 }
