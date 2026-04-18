@@ -1,51 +1,44 @@
-// Configuración de la URL base del backend
-const USE_PRODUCTION = false;
+const API_BASE_URL = 'http://172.20.10.2:8000';
 
-const BACKEND_URLS = {
-  production: 'https://visualfeast-production.up.railway.app',
-  local: 'http://172.20.10.2:8000'
+const request = async (endpoint, options = {}) => {
+  const url = `${API_BASE_URL}/api/v1${endpoint}`;
+  const headers = {
+    'Content-Type': 'application/json',
+    ...options.headers,
+  };
+
+  const response = await fetch(url, { ...options, headers });
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.detail || 'Algo salió mal');
+  }
+
+  return data;
 };
 
-export const API_BASE_URL = USE_PRODUCTION ? BACKEND_URLS.production : BACKEND_URLS.local;
-
-// ── Helpers internos ─────────────────────────────────────────────────────────
-async function request(path, options = {}) {
-  const res = await fetch(`${API_BASE_URL}${path}`, {
-    headers: { 'Content-Type': 'application/json', ...options.headers },
-    ...options,
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.detail || JSON.stringify(data));
-  return data;
-}
-
-async function authRequest(path, token, options = {}) {
-  return request(path, {
-    ...options,
-    headers: { Authorization: `Bearer ${token}`, ...options.headers },
-  });
-}
-
-// ── Cliente de API ────────────────────────────────────────────────────────────
-// Exportamos el objeto 'api' directamente
 export const api = {
-  ping: () => request('/api/v1/test/ping'),
-
-  login: (email, password) =>
-    request('/api/v1/auth/login', {
+  // Autenticación
+  login: async (email, password) => {
+    return request('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
-    }),
+    });
+  },
 
-  register: (data) =>
-    request('/api/v1/auth/register', {
+  register: async (userData) => {
+    return request('/auth/register', {
       method: 'POST',
-      body: JSON.stringify(data),
-    }),
+      body: JSON.stringify(userData),
+    });
+  },
 
-  getMe: (token) => authRequest('/api/v1/auth/me', token),
-
-  getMealLogs: (token) => authRequest('/api/v1/ai/my-meals', token),
+  // Perfil
+  getMe: async (token) => {
+    return request('/auth/me', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+  },
 
   // ── Recetas Inteligentes ─────────────────────────────────────────────────
   createRecipe: (token, data) =>
@@ -62,21 +55,83 @@ export const api = {
     }),
 
   // ── Acciones del Nutriólogo (CONTEXT.md: plans.estado) ───────────────────
-  approveMealLog: (token, mealId, feedback) =>
-    authRequest(`/api/v1/ai/meals/${mealId}/approve`, token, {
+  // Profesionales
+  approveMealLog: async (token, mealId, feedback) => {
+    return request(`/professionals/approve-meal/${mealId}`, {
       method: 'POST',
-      body: JSON.stringify({ feedback, estado: 'aprobado' }),
-    }),
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ feedback }),
+    });
+  },
 
-  flagMealLog: (token, mealId, reason) =>
-    authRequest(`/api/v1/ai/meals/${mealId}/flag`, token, {
+  rejectMealLog: async (token, mealId, reason) =>
+    request(`/professionals/reject-meal/${mealId}`, {
       method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
       body: JSON.stringify({ reason, estado: 'pendiente_revision' }),
     }),
 
-  // --- AI / FOOD ANALYSIS ---
-  
-  // Analizar imagen de comida (base64)
+  // Coach
+  getCoachClients: async (token) => {
+    return request('/coach/my-clients', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+  },
+
+  getCoachStats: async (token) => {
+    return request('/coach/dashboard-stats', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+  },
+
+  // Nutritionist
+  getNutriPatients: async (token) => {
+    return request('/nutritionist/my-patients', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+  },
+
+  getNutriStats: async (token) => {
+    return request('/nutritionist/dashboard-stats', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+  },
+
+  handleRequest: async (token, role, requestId, action) => {
+    return request(`/${role}/handle-request/${requestId}?action=${action}`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` }
+    });
+  },
+
+  getPendingRequests: async (token, role) => {
+    return request(`/${role}/pending-requests`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+  },
+
+  // Marketplace
+  getProfessionals: async (token, role = '') => {
+    return request(`/marketplace/professionals${role ? `?role=${role}` : ''}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+  },
+
+  requestAdvice: async (token, professionalId, message = '') => {
+    return request(`/marketplace/request-advice?professional_id=${professionalId}`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ message })
+    });
+  },
+
+  getMyRequests: async (token) => {
+    return request('/marketplace/my-requests', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+  },
+
+  // AI / FOOD ANALYSIS
   analyzeFood: async (token, base64Image, momento = 'comida') => {
     return request('/ai/analyze-food', {
       method: 'POST',
@@ -88,18 +143,82 @@ export const api = {
     });
   },
 
-  // Obtener historial de comidas
   getMealLogs: async (token, limit = 20) => {
     return request(`/ai/my-meals?limit=${limit}`, {
       headers: { Authorization: `Bearer ${token}` }
     });
   },
 
-  // Mantener por compatibilidad con MealsScreen.jsx
   analyzeFoodFromUrl: async (token, base64Image) => {
     return api.analyzeFood(token, base64Image);
   },
+
+  logManualMeal: async (token, mealData) => {
+    return request('/ai/log-manual', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify(mealData)
+    });
+  },
+
+  generatePlan: async (token, planData) => {
+    return request('/ai/generate-plan', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify(planData)
+    });
+  },
+
+  getAIAlerts: async (token) => {
+    return request('/ai/analyze-patterns', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+  },
+
+  generateRecipes: async (token, ingredients) => {
+    return request('/ai/generate-recipes', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ ingredients })
+    });
+  },
+
+  // Plans
+  getMyPlans: async (token, tipo = '') => {
+    return request(`/plans/my-plans${tipo ? `?tipo=${tipo}` : ''}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+  },
+
+  createPlan: async (token, planData) => {
+    return request('/plans/create', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify(planData)
+    });
+  },
+
+  getClientPlans: async (token, clientId, tipo = '') => {
+    return request(`/plans/client-plans/${clientId}${tipo ? `?tipo=${tipo}` : ''}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+  },
+
+  updateProfile: async (token, profileData) => {
+    return request('/auth/update-profile', {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify(profileData)
+    });
+  },
+
+  generateRoutine: async (token, goal) => {
+    return request('/ai/generate-routine', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ goal })
+    });
+  },
 };
 
-// También lo exportamos por defecto por si alguna pantalla lo pide así
 export default api;

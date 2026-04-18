@@ -1,7 +1,7 @@
 """Plan models for nutrition and training plans."""
 from datetime import datetime
 from enum import Enum
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 
 from beanie import Document, PydanticObjectId
 from pydantic import BaseModel, Field
@@ -18,38 +18,22 @@ class OrigenPlan(str, Enum):
 
 class EstadoPlan(str, Enum):
     """Plan status enumeration."""
-    PENDIENTE_REVISION = "pendiente_revision"
-    APROBADO = "aprobado"
-    RECHAZADO = "rechazado"
-
-class Ejercicio(BaseModel):
-    """Exercise information."""
-    nombre: str
-    series: int
-    reps: int
-
-class Validacion(BaseModel):
-    """Plan validation by a professional."""
-    especialista_id: Optional[PydanticObjectId] = None
-    notas_ajuste: Optional[str] = None
-    fecha_aprobacion: Optional[datetime] = None
-
-class Contenido(BaseModel):
-    """Plan content and exercises."""
-    titulo: str
-    ejercicios: Optional[List[Ejercicio]] = None
+    ACTIVO = "activo"
+    BORRADOR = "borrador"
+    ARCHIVADO = "archivado"
 
 class Plan(Document):
     """Plan document for nutrition or training plans."""
-    user_id: PydanticObjectId
+    user_id: PydanticObjectId  # Cliente al que se le asigna
+    created_by: PydanticObjectId  # Coach/Nutri que lo creó
     tipo_plan: TipoPlan
-    origen: OrigenPlan = OrigenPlan.IA_GENERADO
-    estado: EstadoPlan = EstadoPlan.PENDIENTE_REVISION
-    contenido: Contenido
-    validacion: Optional[Validacion] = None
+    origen: OrigenPlan = OrigenPlan.PROFESIONAL
+    estado: EstadoPlan = EstadoPlan.ACTIVO
+    titulo: str = ""
+    descripcion: str = ""
+    contenido: Dict[str, Any] = {}  # Flexible: ejercicios, comidas, etc.
     creado_at: datetime = Field(default_factory=datetime.utcnow)
 
     class Settings:
         """Beanie document settings."""
         name = "plans"
-

@@ -4,7 +4,7 @@ import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import connect_to_mongo, close_mongo_connection
-from app.api.v1 import auth, ai, test, register
+from app.api.v1 import auth, ai, test, register, coach, nutritionist, marketplace, plans
 from app.core.config import settings
 
 # Configurar logging
@@ -111,6 +111,10 @@ app.include_router(auth.router, prefix="/api/v1")
 app.include_router(ai.router, prefix="/api/v1")
 app.include_router(test.router, prefix="/api/v1")
 app.include_router(register.router, prefix="/api/v1")
+app.include_router(coach.router, prefix="/api/v1")
+app.include_router(nutritionist.router, prefix="/api/v1")
+app.include_router(marketplace.router, prefix="/api/v1")
+app.include_router(plans.router, prefix="/api/v1")
 
 @app.get("/")
 async def root():

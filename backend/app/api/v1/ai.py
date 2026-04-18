@@ -7,7 +7,8 @@ from app.schemas.ai_schema import (
     RecipeResponse,
     PlanRequest,
     PlanResponse,
-    PatternAnalysisResponse
+    PatternAnalysisResponse,
+    ManualMealRequest
 )
 from app.services.gemini_service import gemini_service
 from app.services.elevenlabs_service import elevenlabs_service
@@ -15,9 +16,106 @@ from app.core.security import get_current_active_user
 from app.models.user_model import User
 from app.models.meal_log_model import MealLog
 import base64
-from typing import List
+import logging
+from typing import List, Dict, Any
+import google.generativeai as genai
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/ai", tags=["AI Services"])
+
+@router.get("/debug-gemini")
+async def debug_gemini():
+    """Diagnóstico: lista modelos disponibles y prueba la API key."""
+    try:
+        models = []
+        for m in genai.list_models():
+            models.append({
+                "name": m.name,
+                "supported_methods": m.supported_generation_methods
+            })
+        
+        # Prueba rápida de generación
+        test_model = gemini_service.text_model
+        test_response = test_model.generate_content("Di 'hola' en una palabra")
+        
+        return {
+            "status": "ok",
+            "model_in_use": test_model.model_name,
+            "test_response": test_response.text[:100],
+            "available_models": models[:10],
+            "total_models": len(models)
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "error": str(e),
+            "error_type": type(e).__name__
+        }
+
+
+@router.post("/generate-recipes")
+async def generate_recipes_endpoint(
+    request: dict,
+    current_user: User = Depends(get_current_active_user)
+):
+    """Genera recetas con IA basadas en ingredientes disponibles."""
+    ingredients = request.get("ingredients", [])
+    DEMO_RECIPES = [
+        {"titulo": "Bowl Proteico de Pollo y Frijol", "descripcion": "Alto en proteinas, perfecto post-gym.", "tiempo": "25 min", "kcal": 450, "macros": {"p": 38, "c": 42, "g": 12}, "pasos": ["Cocina arroz con sal y limon", "Saltea pechuga en cubos con ajo", "Calienta frijoles con cebolla", "Arma el bowl con todo", "Agrega limon y salsa"]},
+        {"titulo": "Huevos Rancheros Fit", "descripcion": "Desayuno mexicano nutritivo.", "tiempo": "15 min", "kcal": 380, "macros": {"p": 24, "c": 30, "g": 18}, "pasos": ["Calienta tortillas en comal", "Frie huevos en aceite de oliva", "Prepara salsa con jitomate", "Sirve huevos sobre tortillas", "Acompana con frijoles"]},
+        {"titulo": "Pasta con Verduras Salteadas", "descripcion": "Rapida, balanceada y con fibra.", "tiempo": "20 min", "kcal": 410, "macros": {"p": 16, "c": 58, "g": 14}, "pasos": ["Hierve pasta al dente", "Saltea brocoli y zanahoria", "Mezcla pasta con verduras", "Agrega aceite de oliva y queso", "Sazona al gusto"]},
+        {"titulo": "Ensalada Power de Atun", "descripcion": "Ligera y super nutritiva.", "tiempo": "10 min", "kcal": 320, "macros": {"p": 30, "c": 15, "g": 16}, "pasos": ["Escurre y desmenuza atun", "Pica jitomate y aguacate", "Mezcla en un bowl", "Agrega limon y aceite", "Sirve sobre espinaca"]},
+    ]
+    try:
+        import json as jmod
+        prompt = f"Eres un chef nutriologo mexicano. Crea 3 recetas saludables con: {', '.join(ingredients)}. Responde SOLO en JSON: lista de objetos con titulo, descripcion, tiempo, kcal (numero), macros (p,c,g), pasos (lista strings)."
+        response = gemini_service.text_model.generate_content(prompt)
+        rt = response.text.strip()
+        if "```json" in rt:
+            rt = rt.split("```json")[1].split("```")[0].strip()
+        elif "```" in rt:
+            rt = rt.split("```")[1].split("```")[0].strip()
+        recipes = jmod.loads(rt)
+        return {"recipes": recipes, "source": "gemini"}
+    except Exception as e:
+        logger.warning(f"Gemini no disponible para recetas: {e}")
+        return {"recipes": DEMO_RECIPES[:3], "source": "demo"}
+
+
+@router.post("/generate-routine")
+async def generate_routine(
+    request: dict,
+    current_user: User = Depends(get_current_active_user)
+):
+    """Genera una rutina de ejercicios con IA basada en un objetivo."""
+    goal = request.get("goal", "Entrenamiento General")
+    
+    DEMO_ROUTINE = [
+        {"nombre": "Sentadilla con Barra", "series": 4, "reps": 10, "descanso": 90, "notas": "Baja controlado"},
+        {"nombre": "Press de Banca", "series": 4, "reps": 12, "descanso": 60, "notas": "Retracción escapular"},
+        {"nombre": "Peso Muerto Rumano", "series": 3, "reps": 12, "descanso": 75, "notas": "Siente el estiramiento"},
+        {"nombre": "Dominadas", "series": 3, "reps": 8, "descanso": 60, "notas": "Pecho al cielo"},
+    ]
+    
+    try:
+        import json as jmod
+        prompt = f"""Eres un experto Performance Coach. Crea una rutina de entrenamiento para este objetivo: "{goal}".
+Responde SOLO en JSON: una lista de objetos. Cada objeto tiene: nombre, series (numero), reps (numero), descanso (segundos, numero), notas (string corto)."""
+        
+        response = gemini_service.text_model.generate_content(prompt)
+        rt = response.text.strip()
+        if "```json" in rt:
+            rt = rt.split("```json")[1].split("```")[0].strip()
+        elif "```" in rt:
+            rt = rt.split("```")[1].split("```")[0].strip()
+        
+        routine = jmod.loads(rt)
+        return {"routine": routine, "source": "gemini"}
+    except Exception as e:
+        logger.warning(f"Gemini no disponible para rutinas: {e}")
+        return {"routine": DEMO_ROUTINE, "source": "demo"}
+
 
 @router.post("/analyze-food", response_model=FoodAnalysisResponse)
 async def analyze_food_image(
@@ -139,6 +237,38 @@ async def analyze_food_upload(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error al analizar imagen: {str(e)}"
+        )
+
+@router.post("/log-manual", response_model=Dict[str, Any])
+async def log_manual_meal(
+    request: ManualMealRequest,
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Registro manual de comida: Permite al usuario ingresar los datos nutricionales
+    directamente sin usar análisis de imagen.
+    """
+    try:
+        meal_log = MealLog(
+            user_id=current_user.id,
+            comida={
+                "nombre": request.nombre,
+                "foto_url": "",
+                "momento": request.momento
+            },
+            analisis_ia={
+                "kcal": request.kcal,
+                "macros": {"p": request.p, "c": request.c, "g": request.g},
+                "confidence_score": 1.0,
+                "coach_insight": "Registro manual ingresado por el usuario."
+            }
+        )
+        await meal_log.insert()
+        return {"status": "success", "message": "Comida registrada correctamente", "id": str(meal_log.id)}
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error al registrar comida manual: {str(e)}"
         )
 
 @router.post("/create-recipe", response_model=RecipeResponse)

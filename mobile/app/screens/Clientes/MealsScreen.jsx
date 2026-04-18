@@ -10,32 +10,33 @@ import {
   Platform,
   ActivityIndicator,
   Alert,
+  TextInput,
   Modal,
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import { api } from '../../services/api';
-import AudioPlayer from '../../components/AudioPlayer';
 
 export default function MealsScreen({ navigation, route }) {
   const token = route?.params?.token;
   const user = route?.params?.user;
+
   const [loading, setLoading] = useState(false);
   const [mealLogs, setMealLogs] = useState([]);
   const [stats, setStats] = useState({ kcal: 1420, protein: 84, carbs: 120, fats: 32 });
-  const [selectedMeal, setSelectedMeal] = useState(null);
-  const [modalVisible, setModalVisible] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState(null);
 
-  useEffect(() => {
-    loadMeals();
-  }, []);
+  useFocusEffect(
+    React.useCallback(() => {
+      loadMeals();
+    }, [token])
+  );
 
   const loadMeals = async () => {
     if (!token) return;
     try {
       const data = await api.getMealLogs(token);
-      setMealLogs(data.meals || []);
+      if (data && data.meals) setMealLogs(data.meals);
     } catch (error) {
       console.warn("Error al cargar comidas:", error.message);
     }
@@ -48,7 +49,7 @@ export default function MealsScreen({ navigation, route }) {
     }
 
     const { analisis_ia, comida } = meal;
-    
+
     let message = `🍽️ ${comida.nombre}\n`;
     message += `⏰ ${comida.momento}\n\n`;
     message += `📊 MACRONUTRIENTES:\n`;
@@ -56,30 +57,30 @@ export default function MealsScreen({ navigation, route }) {
     message += `• Proteínas: ${analisis_ia.macros?.p || 0}g\n`;
     message += `• Carbohidratos: ${analisis_ia.macros?.c || 0}g\n`;
     message += `• Grasas: ${analisis_ia.macros?.g || 0}g\n`;
-    
+
     if (analisis_ia.ingredientes && analisis_ia.ingredientes.length > 0) {
       message += `\n🥗 INGREDIENTES:\n`;
       message += analisis_ia.ingredientes.map(ing => `• ${ing}`).join('\n');
     }
-    
+
     if (analisis_ia.advertencias && analisis_ia.advertencias.length > 0) {
       message += `\n\n⚠️ ADVERTENCIAS:\n`;
       message += analisis_ia.advertencias.map(adv => `• ${adv}`).join('\n');
     }
-    
+
     if (analisis_ia.coach_insight) {
       message += `\n\n💬 COACH:\n${analisis_ia.coach_insight}`;
     }
-    
+
     message += `\n\n✓ Precisión: ${Math.round((analisis_ia.confidence_score || 0) * 100)}%`;
-    
+
     Alert.alert("Detalles de la Comida", message);
   };
 
   const pickImage = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Permiso denegado', 'Necesitamos acceso a la cámara para analizar tu comida.');
+      Alert.alert("Permisos necesarios", "Necesitamos acceso a la cámara para analizar tu comida.");
       return;
     }
 
@@ -87,7 +88,7 @@ export default function MealsScreen({ navigation, route }) {
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [4, 3],
-      quality: 0.7,
+      quality: 0.5,
       base64: true,
     });
 
@@ -96,33 +97,77 @@ export default function MealsScreen({ navigation, route }) {
     }
   };
 
-  const analyzeImage = async (base64Image) => {
-    if (!token) {
-      Alert.alert("Error", "Debes estar logueado.");
-      return;
-    }
-
+  const analyzeImage = async (base64) => {
     setLoading(true);
     try {
       const result = await api.analyzeFoodFromUrl(token, base64Image);
       
-      // Guardar resultado y mostrar modal
-      setAnalysisResult(result);
-      setModalVisible(true);
+      // Construir mensaje con toda la información
+      let message = `🍽️ ${result.nombre}\n\n`;
+      message += `📊 MACRONUTRIENTES:\n`;
+      message += `• Calorías: ${result.kcal} kcal\n`;
+      message += `• Proteínas: ${result.macros?.p || 0}g\n`;
+      message += `• Carbohidratos: ${result.macros?.c || 0}g\n`;
+      message += `• Grasas: ${result.macros?.g || 0}g\n`;
       
-      // Recargar comidas
-      await loadMeals();
+      if (result.ingredientes && result.ingredientes.length > 0) {
+        message += `\n🥗 INGREDIENTES:\n`;
+        message += result.ingredientes.map(ing => `• ${ing}`).join('\n');
+      }
+      
+      if (result.advertencias && result.advertencias.length > 0) {
+        message += `\n\n⚠️ ADVERTENCIAS:\n`;
+        message += result.advertencias.map(adv => `• ${adv}`).join('\n');
+      }
+      
+      message += `\n\n💬 COACH:\n${result.coach_insight}`;
+      message += `\n\n✓ Precisión: ${Math.round((result.confidence_score || 0) * 100)}%`;
+      
+      Alert.alert(
+        "✅ Análisis Completado",
+        message,
+        [{ text: "OK", onPress: loadMeals }]
+      );
     } catch (error) {
-      Alert.alert("Error", "No se pudo analizar. " + error.message);
+      Alert.alert("Error de Análisis", error.message);
     } finally {
       setLoading(false);
     }
   };
 
+  const handleManualSubmit = async () => {
+    if (!manualForm.nombre || !manualForm.kcal) {
+      Alert.alert("Campos incompletos", "Por favor ingresa nombre y calorías.");
+      return;
+    }
+    setLoading(true);
+    try {
+      await api.logManualMeal(token, {
+        ...manualForm,
+        kcal: parseFloat(manualForm.kcal),
+        p: parseFloat(manualForm.p) || 0,
+        c: parseFloat(manualForm.c) || 0,
+        g: parseFloat(manualForm.g) || 0,
+      });
+      setShowManualModal(false);
+      setManualForm({ nombre: '', kcal: '', p: '0', c: '0', g: '0', momento: 'comida' });
+      loadMeals();
+    } catch (error) {
+      Alert.alert("Error", error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const totalHoy = mealLogs.reduce((acc, m) => ({
+    kcal: acc.kcal + (m.analisis_ia?.kcal || 0),
+    p: acc.p + (m.analisis_ia?.macros?.p || m.analisis_ia?.macros?.proteinas || 0),
+  }), { kcal: 0, p: 0 });
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        
+
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.logoText}>
@@ -133,80 +178,40 @@ export default function MealsScreen({ navigation, route }) {
 
         {/* Hero Card */}
         <View style={styles.heroCard}>
-          <View style={styles.heroProtocolPill}>
-            <MaterialCommunityIcons name="creation" size={12} color="#FFFFFF" />
-            <Text style={styles.heroProtocolText}>AI VISION PROTOCOL</Text>
-          </View>
-          
-          <Text style={styles.heroTitle}>Análisis Instantáneo</Text>
-          <Text style={styles.heroSubtitle}>
-            Apunta tu cámara a tu plato. Nuestro motor de IA identifica ingredientes y calcula macros en tiempo real.
-          </Text>
-          
+          <Text style={styles.heroTitle}>Analiza tu Plato</Text>
+          <Text style={styles.heroSubtitle}>Usa la cámara para obtener un análisis nutricional instantáneo con IA.</Text>
           <View style={styles.heroButtonsRow}>
-            <TouchableOpacity style={styles.btnScan} onPress={pickImage} disabled={loading}>
-              {loading ? (
-                <ActivityIndicator size="small" color="#2E7D32" />
-              ) : (
-                <>
-                  <Ionicons name="camera-outline" size={16} color="#2E7D32" />
-                  <Text style={styles.btnScanText}>Escanear Plato</Text>
-                </>
-              )}
+            <TouchableOpacity style={styles.btnScan} onPress={handlePickImage} disabled={loading}>
+              <Ionicons name="camera" size={20} color="#65A30D" />
+              <Text style={styles.btnScanText}>Escanear</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.btnManual} onPress={() => setShowManualModal(true)}>
+              <Ionicons name="create-outline" size={20} color="#FFF" />
+              <Text style={styles.btnManualText}>Manual</Text>
             </TouchableOpacity>
           </View>
+        </View>
 
-          <View style={styles.heroImageContainer}>
-            <Image 
-              source={{ uri: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&q=80' }} 
-              style={styles.heroImage}
-            />
-            <View style={styles.accuracyBadge}>
-              <Ionicons name="checkmark-circle" size={14} color="#1D4ED8" />
-              <Text style={styles.accuracyText}>98.2% Precisión IA</Text>
-            </View>
+        {/* Stats */}
+        <View style={styles.statsRow}>
+          <View style={styles.statBox}>
+            <Text style={styles.statVal}>{totalHoy.kcal.toFixed(0)}</Text>
+            <Text style={styles.statLab}>KCAL HOY</Text>
+          </View>
+          <View style={styles.statBox}>
+            <Text style={[styles.statVal, { color: '#059669' }]}>{totalHoy.p.toFixed(0)}g</Text>
+            <Text style={styles.statLab}>PROT</Text>
           </View>
         </View>
 
-        {/* Daily Fuel Status */}
-        <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>Estado Nutricional Diario</Text>
-            <Ionicons name="calendar-outline" size={18} color="#3B82F6" />
-          </View>
-          
-          <View style={styles.fuelCenter}>
-            <View style={styles.fuelRingOuter}>
-              <View style={styles.fuelRingInner}>
-                <Text style={styles.fuelValue}>{stats.kcal}</Text>
-                <Text style={styles.fuelLabel}>KCAL RESTANTES</Text>
-              </View>
-            </View>
-          </View>
-
-          {/* Progress Bars */}
-          <View style={styles.macroRow}>
-            <View style={styles.macroHeader}>
-              <Text style={styles.macroName}>PROTEÍNA</Text>
-              <Text style={styles.macroAmount}>{stats.protein}G / 180G</Text>
-            </View>
-            <View style={styles.progressBarBg}>
-              <View style={[styles.progressBarFill, { width: '45%', backgroundColor: '#059669' }]} />
-            </View>
-          </View>
-        </View>
-
-        {/* Logged Today */}
-        <View style={styles.sectionTop}>
-          <Text style={styles.sectionTitle}>Comidas de Hoy</Text>
-        </View>
-
+        {/* History */}
+        <Text style={styles.sectionTitle}>Historial Reciente</Text>
         {mealLogs.length === 0 ? (
-          <Text style={styles.emptyText}>No has registrado comidas hoy.</Text>
+          <Text style={styles.emptyText}>No hay registros hoy</Text>
         ) : (
           mealLogs.map((meal) => (
-            <TouchableOpacity 
-              key={meal.id} 
+            <TouchableOpacity
+              key={meal.id}
               style={styles.logCard}
               onPress={() => showMealDetails(meal)}
             >
@@ -246,130 +251,141 @@ export default function MealsScreen({ navigation, route }) {
 
       </ScrollView>
 
-      {/* Floating Action Button */}
-      <TouchableOpacity style={styles.fab} onPress={pickImage}>
-        <Ionicons name="camera" size={24} color="#FFF" />
-      </TouchableOpacity>
-
-      {/* Bottom Navigation */}
-      <View style={styles.bottomNav}>
-        <TouchableOpacity 
-          style={styles.navItem}
-          onPress={() => navigation.navigate('Dashboard', { user, token })}
-        >
-          <Ionicons name="home-outline" size={24} color="#64748B" />
-          <Text style={styles.navText}>HOME</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity style={styles.navItem}>
-          <MaterialCommunityIcons name="dumbbell" size={24} color="#64748B" />
-          <Text style={styles.navText}>MOVEMENT</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity style={styles.navItemActive}>
-          <MaterialCommunityIcons name="silverware-fork-knife" size={24} color="#2E7D32" />
-          <Text style={styles.navTextActive}>MEALS</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Modal de Análisis */}
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
-      >
+      {/* Manual Modal */}
+      <Modal visible={showManualModal} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <ScrollView showsVerticalScrollIndicator={false}>
-              {analysisResult && (
-                <>
-                  <View style={styles.modalHeader}>
-                    <Text style={styles.modalTitle}>✅ Análisis Completado</Text>
-                    <TouchableOpacity onPress={() => setModalVisible(false)}>
-                      <Ionicons name="close-circle" size={28} color="#64748B" />
-                    </TouchableOpacity>
-                  </View>
-
-                  <Text style={styles.foodName}>🍽️ {analysisResult.nombre}</Text>
-
-                  <View style={styles.macrosCard}>
-                    <Text style={styles.sectionTitle}>📊 MACRONUTRIENTES</Text>
-                    <View style={styles.macrosGrid}>
-                      <View style={styles.macroItem}>
-                        <Text style={styles.macroValue}>{analysisResult.kcal}</Text>
-                        <Text style={styles.macroLabel}>KCAL</Text>
-                      </View>
-                      <View style={styles.macroItem}>
-                        <Text style={styles.macroValue}>{analysisResult.macros?.p || 0}g</Text>
-                        <Text style={styles.macroLabel}>PROTEÍNAS</Text>
-                      </View>
-                      <View style={styles.macroItem}>
-                        <Text style={styles.macroValue}>{analysisResult.macros?.c || 0}g</Text>
-                        <Text style={styles.macroLabel}>CARBOS</Text>
-                      </View>
-                      <View style={styles.macroItem}>
-                        <Text style={styles.macroValue}>{analysisResult.macros?.g || 0}g</Text>
-                        <Text style={styles.macroLabel}>GRASAS</Text>
-                      </View>
-                    </View>
-                  </View>
-
-                  {analysisResult.ingredientes && analysisResult.ingredientes.length > 0 && (
-                    <View style={styles.section}>
-                      <Text style={styles.sectionTitle}>🥗 INGREDIENTES</Text>
-                      {analysisResult.ingredientes.map((ing, idx) => (
-                        <Text key={idx} style={styles.listItem}>• {ing}</Text>
-                      ))}
-                    </View>
-                  )}
-
-                  {analysisResult.advertencias && analysisResult.advertencias.length > 0 && (
-                    <View style={styles.warningSection}>
-                      <Text style={styles.warningSectionTitle}>⚠️ ADVERTENCIAS</Text>
-                      {analysisResult.advertencias.map((adv, idx) => (
-                        <Text key={idx} style={styles.warningItem}>• {adv}</Text>
-                      ))}
-                    </View>
-                  )}
-
-                  <View style={styles.coachSection}>
-                    <Text style={styles.sectionTitle}>💬 COACH NUTRICIONAL</Text>
-                    <Text style={styles.coachText}>{analysisResult.coach_insight}</Text>
-                    
-                    {/* Reproductor de Audio */}
-                    {analysisResult.audio_base64 && (
-                      <AudioPlayer 
-                        audioBase64={analysisResult.audio_base64}
-                        text={analysisResult.coach_insight}
-                      />
-                    )}
-                  </View>
-
-                  <View style={styles.confidenceSection}>
-                    <Ionicons name="checkmark-circle" size={20} color="#059669" />
-                    <Text style={styles.confidenceText}>
-                      Precisión: {Math.round((analysisResult.confidence_score || 0) * 100)}%
-                    </Text>
-                  </View>
-
-                  <TouchableOpacity 
-                    style={styles.closeButton}
-                    onPress={() => setModalVisible(false)}
-                  >
-                    <Text style={styles.closeButtonText}>Cerrar</Text>
-                  </TouchableOpacity>
-                </>
-              )}
-            </ScrollView>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Registro Manual</Text>
+            <TextInput style={styles.input} placeholder="Comida" value={manualForm.nombre} onChangeText={(t) => setManualForm({ ...manualForm, nombre: t })} />
+            <TextInput style={styles.input} placeholder="Calorías" keyboardType="numeric" value={manualForm.kcal} onChangeText={(t) => setManualForm({ ...manualForm, kcal: t })} />
+            <TouchableOpacity style={styles.btnSave} onPress={handleManualSubmit}>
+              <Text style={styles.btnSaveText}>Guardar</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.btnCancel} onPress={() => setShowManualModal(false)}>
+              <Text style={styles.btnCancelText}>Cancelar</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
+
+      {/* Result Modal - AI Analysis */}
+      <Modal visible={showResultModal} animationType="fade" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.resultCard}>
+            <View style={styles.resultHeader}>
+              <View style={styles.checkCircle}>
+                <Ionicons name="checkmark" size={32} color="#FFF" />
+              </View>
+              <Text style={styles.resultTitle}>¡Análisis Completo!</Text>
+            </View>
+
+            <Text style={styles.detectedName}>{analysisResult?.nombre}</Text>
+
+            <View style={styles.resultStatsRow}>
+              <View style={styles.resStat}>
+                <Text style={styles.resStatVal}>{analysisResult?.kcal}</Text>
+                <Text style={styles.resStatLab}>KCAL</Text>
+              </View>
+              <View style={styles.resStat}>
+                <Text style={styles.resStatVal}>{analysisResult?.macros?.p}g</Text>
+                <Text style={styles.resStatLab}>PROT</Text>
+              </View>
+              <View style={styles.resStat}>
+                <Text style={styles.resStatVal}>{analysisResult?.macros?.c}g</Text>
+                <Text style={styles.resStatLab}>CARB</Text>
+              </View>
+            </View>
+
+            <View style={styles.insightBox}>
+              <View style={styles.insightHeader}>
+                <MaterialCommunityIcons name="robot" size={20} color="#8DC63F" />
+                <Text style={styles.insightLabel}>COACH INSIGHT</Text>
+              </View>
+              <Text style={styles.insightText}>{analysisResult?.coach_insight}</Text>
+            </View>
+
+            <TouchableOpacity style={styles.btnCloseResult} onPress={() => setShowResultModal(false)}>
+              <Text style={styles.btnCloseResultText}>Entendido</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Standard Bottom Nav */}
+      <View style={styles.bottomNav}>
+        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Dashboard', { user, token })}>
+          <Ionicons name="home-outline" size={24} color="#64748b" />
+          <Text style={styles.navText}>INICIO</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Movement', { user, token })}>
+          <Ionicons name="barbell-outline" size={24} color="#64748b" />
+          <Text style={styles.navText}>MOV.</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.navItemActive}>
+          <Ionicons name="restaurant" size={24} color="#000" />
+          <Text style={styles.navTextActive}>MEALS</Text>
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: { flex: 1, backgroundColor: '#FAFAFA' },
+  scrollContent: { paddingHorizontal: 20, paddingTop: Platform.OS === 'android' ? 40 : 10, paddingBottom: 120 },
+  header: { marginBottom: 24 },
+  logoText: { fontSize: 18, fontWeight: '800' },
+  logoTextBlack: { color: '#000' },
+  logoTextGreen: { color: '#8DC63F' },
+  heroCard: { backgroundColor: '#65A30D', borderRadius: 24, padding: 24, marginBottom: 24 },
+  heroTitle: { fontSize: 24, fontWeight: '800', color: '#FFF', marginBottom: 8 },
+  heroSubtitle: { fontSize: 13, color: 'rgba(255,255,255,0.8)', marginBottom: 20 },
+  heroButtonsRow: { flexDirection: 'row', gap: 12 },
+  btnScan: { flex: 1, backgroundColor: '#FFF', borderRadius: 12, padding: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  btnScanText: { fontWeight: '800', color: '#65A30D' },
+  btnManual: { flex: 1, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 12, padding: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderWidth: 1, borderColor: '#FFF' },
+  btnManualText: { fontWeight: '800', color: '#FFF' },
+  statsRow: { flexDirection: 'row', gap: 12, marginBottom: 32 },
+  statBox: { flex: 1, backgroundColor: '#FFF', borderRadius: 16, padding: 16, alignItems: 'center', elevation: 2 },
+  statVal: { fontSize: 20, fontWeight: '900' },
+  statLab: { fontSize: 9, fontWeight: '800', color: '#64748B', marginTop: 4 },
+  sectionTitle: { fontSize: 18, fontWeight: '800', marginBottom: 16 },
+  mealItem: { backgroundColor: '#FFF', borderRadius: 16, padding: 12, flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 10, elevation: 1 },
+  mealIconBox: { width: 40, height: 40, borderRadius: 12, backgroundColor: '#F0FDF4', justifyContent: 'center', alignItems: 'center' },
+  mealName: { fontSize: 14, fontWeight: '700', color: '#1E293B' },
+  mealTime: { fontSize: 10, color: '#94A3B8', fontWeight: '600' },
+  mealKcal: { fontSize: 14, fontWeight: '800', color: '#166534' },
+  emptyText: { textAlign: 'center', color: '#94A3B8', paddingVertical: 20 },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', padding: 20 },
+  modalCard: { backgroundColor: '#FFF', borderRadius: 24, padding: 24 },
+  modalTitle: { fontSize: 20, fontWeight: '800', marginBottom: 20, textAlign: 'center' },
+  input: { backgroundColor: '#F1F5F9', borderRadius: 12, padding: 14, marginBottom: 12 },
+  btnSave: { backgroundColor: '#65A30D', borderRadius: 12, padding: 16, alignItems: 'center' },
+  btnSaveText: { color: '#FFF', fontWeight: '800' },
+  btnCancel: { padding: 16, alignItems: 'center' },
+  btnCancelText: { color: '#EF4444', fontWeight: '800' },
+  resultCard: { backgroundColor: '#FFF', borderRadius: 32, padding: 24, alignItems: 'center' },
+  resultHeader: { alignItems: 'center', marginBottom: 20 },
+  checkCircle: { width: 64, height: 64, borderRadius: 32, backgroundColor: '#8DC63F', justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
+  resultTitle: { fontSize: 22, fontWeight: '900', color: '#1E293B' },
+  detectedName: { fontSize: 18, fontWeight: '800', color: '#65A30D', marginBottom: 24, textAlign: 'center' },
+  resultStatsRow: { flexDirection: 'row', gap: 20, marginBottom: 30 },
+  resStat: { alignItems: 'center', width: 70 },
+  resStatVal: { fontSize: 20, fontWeight: '900', color: '#1E293B' },
+  resStatLab: { fontSize: 10, fontWeight: '800', color: '#94A3B8' },
+  insightBox: { backgroundColor: '#F8FAFC', borderRadius: 20, padding: 20, width: '100%', marginBottom: 24, borderLeftWidth: 4, borderLeftColor: '#8DC63F' },
+  insightHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
+  insightLabel: { fontSize: 10, fontWeight: '900', color: '#64748B', letterSpacing: 1 },
+  insightText: { fontSize: 14, color: '#334155', lineHeight: 20, fontWeight: '600' },
+  btnCloseResult: { backgroundColor: '#1E293B', borderRadius: 16, paddingVertical: 16, paddingHorizontal: 40, width: '100%', alignItems: 'center' },
+  btnCloseResultText: { color: '#FFF', fontWeight: '800', fontSize: 16 },
+  bottomNav: { position: 'absolute', bottom: 20, left: 20, right: 20, backgroundColor: '#FFF', flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', paddingVertical: 12, borderRadius: 30, elevation: 10 },
+  navItem: { alignItems: 'center', paddingHorizontal: 16 },
+  navItemActive: { backgroundColor: '#F0FDF4', paddingHorizontal: 20, paddingVertical: 8, borderRadius: 20 },
+  navText: { fontSize: 9, fontWeight: '600', color: '#64748B', marginTop: 4 },
+  navTextActive: { fontSize: 9, fontWeight: '800', color: '#000', marginTop: 4 },
+  loadingOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(255,255,255,0.9)', justifyContent: 'center', alignItems: 'center', zIndex: 99 },
+  loadingText: { marginTop: 16, fontSize: 16, fontWeight: '800', color: '#65A30D' },
   safeArea: {
     flex: 1,
     backgroundColor: '#F8FAFC',
