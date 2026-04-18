@@ -22,16 +22,11 @@ async def connect_to_mongo():
     try:
         logger.info("🔄 Conectando a MongoDB...")
         
-        # Configuración SSL para MongoDB Atlas
-        import ssl
-        ssl_context = ssl.create_default_context()
-        ssl_context.check_hostname = False
-        ssl_context.verify_mode = ssl.CERT_NONE
-        
+        # Configuración para MongoDB Atlas - desactivar verificación SSL si hay problemas
         db.client = AsyncIOMotorClient(
             settings.MONGODB_URI,
-            tlsCAFile=None,
-            ssl_cert_reqs=ssl.CERT_NONE
+            tlsAllowInvalidCertificates=True,
+            serverSelectionTimeoutMS=10000
         )
         
         # Verificar conexión
