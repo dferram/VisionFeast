@@ -2,6 +2,7 @@ from pydantic_settings import BaseSettings
 from typing import Optional
 
 class Settings(BaseSettings):
+    ENVIRONMENT: Optional[str] = "development"
     MONGODB_URI: str = "mongodb://localhost:27017/visionfeast_db"
     
     GEMINI_API_KEY: str

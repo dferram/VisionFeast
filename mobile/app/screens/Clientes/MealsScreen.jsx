@@ -36,6 +36,41 @@ export default function MealsScreen({ navigation, route }) {
     }
   };
 
+  const showMealDetails = (meal) => {
+    if (!meal.analisis_ia) {
+      Alert.alert("Sin análisis", "Esta comida no tiene análisis de IA disponible.");
+      return;
+    }
+
+    const { analisis_ia, comida } = meal;
+    
+    let message = `🍽️ ${comida.nombre}\n`;
+    message += `⏰ ${comida.momento}\n\n`;
+    message += `📊 MACRONUTRIENTES:\n`;
+    message += `• Calorías: ${analisis_ia.kcal} kcal\n`;
+    message += `• Proteínas: ${analisis_ia.macros?.p || 0}g\n`;
+    message += `• Carbohidratos: ${analisis_ia.macros?.c || 0}g\n`;
+    message += `• Grasas: ${analisis_ia.macros?.g || 0}g\n`;
+    
+    if (analisis_ia.ingredientes && analisis_ia.ingredientes.length > 0) {
+      message += `\n🥗 INGREDIENTES:\n`;
+      message += analisis_ia.ingredientes.map(ing => `• ${ing}`).join('\n');
+    }
+    
+    if (analisis_ia.advertencias && analisis_ia.advertencias.length > 0) {
+      message += `\n\n⚠️ ADVERTENCIAS:\n`;
+      message += analisis_ia.advertencias.map(adv => `• ${adv}`).join('\n');
+    }
+    
+    if (analisis_ia.coach_insight) {
+      message += `\n\n💬 COACH:\n${analisis_ia.coach_insight}`;
+    }
+    
+    message += `\n\n✓ Precisión: ${Math.round((analisis_ia.confidence_score || 0) * 100)}%`;
+    
+    Alert.alert("Detalles de la Comida", message);
+  };
+
   const pickImage = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
@@ -65,9 +100,31 @@ export default function MealsScreen({ navigation, route }) {
     setLoading(true);
     try {
       const result = await api.analyzeFoodFromUrl(token, base64Image);
+      
+      // Construir mensaje con toda la información
+      let message = `🍽️ ${result.nombre}\n\n`;
+      message += `📊 MACRONUTRIENTES:\n`;
+      message += `• Calorías: ${result.kcal} kcal\n`;
+      message += `• Proteínas: ${result.macros?.p || 0}g\n`;
+      message += `• Carbohidratos: ${result.macros?.c || 0}g\n`;
+      message += `• Grasas: ${result.macros?.g || 0}g\n`;
+      
+      if (result.ingredientes && result.ingredientes.length > 0) {
+        message += `\n🥗 INGREDIENTES:\n`;
+        message += result.ingredientes.map(ing => `• ${ing}`).join('\n');
+      }
+      
+      if (result.advertencias && result.advertencias.length > 0) {
+        message += `\n\n⚠️ ADVERTENCIAS:\n`;
+        message += result.advertencias.map(adv => `• ${adv}`).join('\n');
+      }
+      
+      message += `\n\n💬 COACH:\n${result.coach_insight}`;
+      message += `\n\n✓ Precisión: ${Math.round((result.confidence_score || 0) * 100)}%`;
+      
       Alert.alert(
-        "Análisis de IA",
-        `Comida: ${result.nombre}\nCalorías: ${result.kcal} kcal\n\nCoach: ${result.coach_insight}`,
+        "✅ Análisis Completado",
+        message,
         [{ text: "OK", onPress: loadMeals }]
       );
     } catch (error) {
@@ -163,7 +220,11 @@ export default function MealsScreen({ navigation, route }) {
           <Text style={styles.emptyText}>No has registrado comidas hoy.</Text>
         ) : (
           mealLogs.map((meal) => (
-            <View key={meal.id} style={styles.logCard}>
+            <TouchableOpacity 
+              key={meal.id} 
+              style={styles.logCard}
+              onPress={() => showMealDetails(meal)}
+            >
               <View style={styles.logHeader}>
                 <View style={styles.logIconContainer}>
                   <MaterialCommunityIcons name="silverware-fork-knife" size={20} color="#65A30D" />
@@ -171,23 +232,30 @@ export default function MealsScreen({ navigation, route }) {
                 <View style={styles.logInfo}>
                   <Text style={styles.logTitle}>{meal.comida.nombre}</Text>
                   <Text style={styles.logTime}>Vision IA • {meal.comida.momento}</Text>
+                  {meal.analisis_ia?.advertencias && meal.analisis_ia.advertencias.length > 0 && (
+                    <Text style={styles.warningBadge}>⚠️ {meal.analisis_ia.advertencias.length} advertencia(s)</Text>
+                  )}
                 </View>
               </View>
               <View style={styles.logMacrosRow}>
                 <View style={styles.logMacroCol}>
                   <Text style={styles.logMacroLabel}>KCAL</Text>
-                  <Text style={styles.logMacroValue}>{meal.analisis_ia.kcal}</Text>
+                  <Text style={styles.logMacroValue}>{meal.analisis_ia?.kcal || 0}</Text>
                 </View>
                 <View style={styles.logMacroCol}>
                   <Text style={styles.logMacroLabel}>PROT</Text>
-                  <Text style={styles.logMacroValue}>{meal.analisis_ia.macros?.proteinas || 0}g</Text>
+                  <Text style={styles.logMacroValue}>{meal.analisis_ia?.macros?.p || 0}g</Text>
                 </View>
                 <View style={styles.logMacroCol}>
                   <Text style={styles.logMacroLabel}>CARBS</Text>
-                  <Text style={styles.logMacroValue}>{meal.analisis_ia.macros?.carbohidratos || 0}g</Text>
+                  <Text style={styles.logMacroValue}>{meal.analisis_ia?.macros?.c || 0}g</Text>
+                </View>
+                <View style={styles.logMacroCol}>
+                  <Text style={styles.logMacroLabel}>GRASAS</Text>
+                  <Text style={styles.logMacroValue}>{meal.analisis_ia?.macros?.g || 0}g</Text>
                 </View>
               </View>
-            </View>
+            </TouchableOpacity>
           ))
         )}
 
@@ -450,6 +518,12 @@ const styles = StyleSheet.create({
   logTime: {
     fontSize: 10,
     color: '#64748B',
+  },
+  warningBadge: {
+    fontSize: 10,
+    color: '#DC2626',
+    marginTop: 4,
+    fontWeight: '600',
   },
   logMacrosRow: {
     flexDirection: 'row',
