@@ -2,7 +2,7 @@
 # More GitHub Actions for Azure: https://github.com/Azure/actions
 # More info on Python, GitHub Actions, and Azure App Service: https://aka.ms/python-webapps-actions
 
-name: Build and deploy Python app to Azure Web App - visionfeast-api
+name: Build and deploy Python app to Azure Web App - VisionFeast-API
 
 on:
   push:
@@ -22,7 +22,7 @@ jobs:
       - name: Set up Python version
         uses: actions/setup-python@v5
         with:
-          python-version: '3.14'
+          python-version: '3.x'
 
       # 🛠️ Local Build Section (Optional)
       # The following section in your workflow is designed to catch build issues early on the client side, before deployment. This can be helpful for debugging and validation. However, if this step significantly increases deployment time and early detection is not critical for your workflow, you may remove this section to streamline the deployment process.
@@ -63,14 +63,14 @@ jobs:
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_51D37FA6446F4730BE112B6694FCD529 }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_5BD573017B5145809766DCCF0505723F }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_DDC4220DA02B4E32B6A84DB23962EBCB }}
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_0F3E141EDA7642B09DDD4180A10C8979 }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_B2D13461CBBF4867AAEE7B8AE06F72A4 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_F72F6A766A684E40A76CCE5C500BD6F0 }}
 
       - name: 'Deploy to Azure Web App'
         uses: azure/webapps-deploy@v3
         id: deploy-to-webapp
         with:
-          app-name: 'visionfeast-api'
+          app-name: 'VisionFeast-API'
           slot-name: 'Production'
           
