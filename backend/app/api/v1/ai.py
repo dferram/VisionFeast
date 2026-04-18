@@ -167,7 +167,9 @@ async def analyze_food_image(
                 "kcal": analysis["kcal"],
                 "macros": analysis["macros"],
                 "confidence_score": analysis["confidence_score"],
-                "coach_insight": coach_insight
+                "coach_insight": coach_insight,
+                "ingredientes": analysis.get("ingredientes", []),
+                "advertencias": analysis.get("advertencias", [])
             }
         )
         await meal_log.insert()

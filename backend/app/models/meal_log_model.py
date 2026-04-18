@@ -1,15 +1,15 @@
 """Meal log models for food tracking and AI analysis."""
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 
 from beanie import Document, PydanticObjectId
 from pydantic import BaseModel, Field
 
 class Macros(BaseModel):
     """Macronutrients data model."""
-    p: float
-    c: float
-    g: float
+    p: float  # Proteínas en gramos
+    c: float  # Carbohidratos en gramos
+    g: float  # Grasas en gramos
 
 class AnalisisIA(BaseModel):
     """AI analysis results for a meal."""
@@ -17,6 +17,8 @@ class AnalisisIA(BaseModel):
     macros: Macros
     confidence_score: float
     coach_insight: str
+    ingredientes: Optional[List[str]] = []
+    advertencias: Optional[List[str]] = []
 
 class Comida(BaseModel):
     """Food/meal information."""

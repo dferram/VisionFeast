@@ -21,13 +21,13 @@ import api from '../../services/api';
 export default function MealsScreen({ navigation, route }) {
   const token = route?.params?.token;
   const user = route?.params?.user;
-  
+
   const [loading, setLoading] = useState(false);
   const [mealLogs, setMealLogs] = useState([]);
   const [showManualModal, setShowManualModal] = useState(false);
   const [showResultModal, setShowResultModal] = useState(false);
   const [analysisResult, setAnalysisResult] = useState(null);
-  
+
   const [manualForm, setManualForm] = useState({
     nombre: '',
     kcal: '',
@@ -53,7 +53,42 @@ export default function MealsScreen({ navigation, route }) {
     }
   };
 
-  const handlePickImage = async () => {
+  const showMealDetails = (meal) => {
+    if (!meal.analisis_ia) {
+      Alert.alert("Sin análisis", "Esta comida no tiene análisis de IA disponible.");
+      return;
+    }
+
+    const { analisis_ia, comida } = meal;
+
+    let message = `🍽️ ${comida.nombre}\n`;
+    message += `⏰ ${comida.momento}\n\n`;
+    message += `📊 MACRONUTRIENTES:\n`;
+    message += `• Calorías: ${analisis_ia.kcal} kcal\n`;
+    message += `• Proteínas: ${analisis_ia.macros?.p || 0}g\n`;
+    message += `• Carbohidratos: ${analisis_ia.macros?.c || 0}g\n`;
+    message += `• Grasas: ${analisis_ia.macros?.g || 0}g\n`;
+
+    if (analisis_ia.ingredientes && analisis_ia.ingredientes.length > 0) {
+      message += `\n🥗 INGREDIENTES:\n`;
+      message += analisis_ia.ingredientes.map(ing => `• ${ing}`).join('\n');
+    }
+
+    if (analisis_ia.advertencias && analisis_ia.advertencias.length > 0) {
+      message += `\n\n⚠️ ADVERTENCIAS:\n`;
+      message += analisis_ia.advertencias.map(adv => `• ${adv}`).join('\n');
+    }
+
+    if (analisis_ia.coach_insight) {
+      message += `\n\n💬 COACH:\n${analisis_ia.coach_insight}`;
+    }
+
+    message += `\n\n✓ Precisión: ${Math.round((analisis_ia.confidence_score || 0) * 100)}%`;
+
+    Alert.alert("Detalles de la Comida", message);
+  };
+
+  const pickImage = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
       Alert.alert("Permisos necesarios", "Necesitamos acceso a la cámara para analizar tu comida.");
@@ -76,10 +111,34 @@ export default function MealsScreen({ navigation, route }) {
   const analyzeImage = async (base64) => {
     setLoading(true);
     try {
-      const res = await api.analyzeFood(token, base64, 'comida');
-      setAnalysisResult(res);
-      setShowResultModal(true);
-      loadMeals();
+      const result = await api.analyzeFoodFromUrl(token, base64Image);
+
+      // Construir mensaje con toda la información
+      let message = `🍽️ ${result.nombre}\n\n`;
+      message += `📊 MACRONUTRIENTES:\n`;
+      message += `• Calorías: ${result.kcal} kcal\n`;
+      message += `• Proteínas: ${result.macros?.p || 0}g\n`;
+      message += `• Carbohidratos: ${result.macros?.c || 0}g\n`;
+      message += `• Grasas: ${result.macros?.g || 0}g\n`;
+
+      if (result.ingredientes && result.ingredientes.length > 0) {
+        message += `\n🥗 INGREDIENTES:\n`;
+        message += result.ingredientes.map(ing => `• ${ing}`).join('\n');
+      }
+
+      if (result.advertencias && result.advertencias.length > 0) {
+        message += `\n\n⚠️ ADVERTENCIAS:\n`;
+        message += result.advertencias.map(adv => `• ${adv}`).join('\n');
+      }
+
+      message += `\n\n💬 COACH:\n${result.coach_insight}`;
+      message += `\n\n✓ Precisión: ${Math.round((result.confidence_score || 0) * 100)}%`;
+
+      Alert.alert(
+        "✅ Análisis Completado",
+        message,
+        [{ text: "OK", onPress: loadMeals }]
+      );
     } catch (error) {
       Alert.alert("Error de Análisis", error.message);
     } finally {
@@ -119,7 +178,7 @@ export default function MealsScreen({ navigation, route }) {
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        
+
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.logoText}>
@@ -161,17 +220,43 @@ export default function MealsScreen({ navigation, route }) {
         {mealLogs.length === 0 ? (
           <Text style={styles.emptyText}>No hay registros hoy</Text>
         ) : (
-          mealLogs.map((meal, idx) => (
-            <View key={idx} style={styles.mealItem}>
-              <View style={styles.mealIconBox}>
-                <Ionicons name="restaurant" size={20} color="#8DC63F" />
+          mealLogs.map((meal) => (
+            <TouchableOpacity
+              key={meal.id}
+              style={styles.logCard}
+              onPress={() => showMealDetails(meal)}
+            >
+              <View style={styles.logHeader}>
+                <View style={styles.logIconContainer}>
+                  <MaterialCommunityIcons name="silverware-fork-knife" size={20} color="#65A30D" />
+                </View>
+                <View style={styles.logInfo}>
+                  <Text style={styles.logTitle}>{meal.comida.nombre}</Text>
+                  <Text style={styles.logTime}>Vision IA • {meal.comida.momento}</Text>
+                  {meal.analisis_ia?.advertencias && meal.analisis_ia.advertencias.length > 0 && (
+                    <Text style={styles.warningBadge}>⚠️ {meal.analisis_ia.advertencias.length} advertencia(s)</Text>
+                  )}
+                </View>
               </View>
-              <View style={{flex: 1}}>
-                <Text style={styles.mealName}>{meal.comida?.nombre}</Text>
-                <Text style={styles.mealTime}>{meal.comida?.momento?.toUpperCase()}</Text>
+              <View style={styles.logMacrosRow}>
+                <View style={styles.logMacroCol}>
+                  <Text style={styles.logMacroLabel}>KCAL</Text>
+                  <Text style={styles.logMacroValue}>{meal.analisis_ia?.kcal || 0}</Text>
+                </View>
+                <View style={styles.logMacroCol}>
+                  <Text style={styles.logMacroLabel}>PROT</Text>
+                  <Text style={styles.logMacroValue}>{meal.analisis_ia?.macros?.p || 0}g</Text>
+                </View>
+                <View style={styles.logMacroCol}>
+                  <Text style={styles.logMacroLabel}>CARBS</Text>
+                  <Text style={styles.logMacroValue}>{meal.analisis_ia?.macros?.c || 0}g</Text>
+                </View>
+                <View style={styles.logMacroCol}>
+                  <Text style={styles.logMacroLabel}>GRASAS</Text>
+                  <Text style={styles.logMacroValue}>{meal.analisis_ia?.macros?.g || 0}g</Text>
+                </View>
               </View>
-              <Text style={styles.mealKcal}>{meal.analisis_ia?.kcal} kcal</Text>
-            </View>
+            </TouchableOpacity>
           ))
         )}
 
@@ -182,8 +267,8 @@ export default function MealsScreen({ navigation, route }) {
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
             <Text style={styles.modalTitle}>Registro Manual</Text>
-            <TextInput style={styles.input} placeholder="Comida" value={manualForm.nombre} onChangeText={(t) => setManualForm({...manualForm, nombre: t})} />
-            <TextInput style={styles.input} placeholder="Calorías" keyboardType="numeric" value={manualForm.kcal} onChangeText={(t) => setManualForm({...manualForm, kcal: t})} />
+            <TextInput style={styles.input} placeholder="Comida" value={manualForm.nombre} onChangeText={(t) => setManualForm({ ...manualForm, nombre: t })} />
+            <TextInput style={styles.input} placeholder="Calorías" keyboardType="numeric" value={manualForm.kcal} onChangeText={(t) => setManualForm({ ...manualForm, kcal: t })} />
             <TouchableOpacity style={styles.btnSave} onPress={handleManualSubmit}>
               <Text style={styles.btnSaveText}>Guardar</Text>
             </TouchableOpacity>
@@ -206,7 +291,7 @@ export default function MealsScreen({ navigation, route }) {
             </View>
 
             <Text style={styles.detectedName}>{analysisResult?.nombre}</Text>
-            
+
             <View style={styles.resultStatsRow}>
               <View style={styles.resStat}>
                 <Text style={styles.resStatVal}>{analysisResult?.kcal}</Text>
@@ -319,4 +404,311 @@ const styles = StyleSheet.create({
   navTextActive: { fontSize: 9, fontWeight: '800', color: '#000', marginTop: 4 },
   loadingOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(255,255,255,0.9)', justifyContent: 'center', alignItems: 'center', zIndex: 99 },
   loadingText: { marginTop: 16, fontSize: 16, fontWeight: '800', color: '#65A30D' },
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#F8FAFC',
+  },
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === 'android' ? 40 : 10,
+    paddingBottom: 150,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  logoText: {
+    fontSize: 16,
+    fontWeight: '800',
+    letterSpacing: 1,
+  },
+  logoTextBlack: {
+    color: '#000',
+  },
+  logoTextGreen: {
+    color: '#8DC63F',
+  },
+  heroCard: {
+    backgroundColor: '#65A30D',
+    borderRadius: 24,
+    padding: 24,
+    marginBottom: 24,
+    overflow: 'hidden',
+  },
+  heroProtocolPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    alignSelf: 'flex-start',
+    marginBottom: 16,
+  },
+  heroProtocolText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+    marginLeft: 6,
+  },
+  heroTitle: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    lineHeight: 36,
+    marginBottom: 12,
+  },
+  heroSubtitle: {
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.9)',
+    lineHeight: 18,
+    marginBottom: 20,
+  },
+  heroButtonsRow: {
+    flexDirection: 'row',
+    marginBottom: 24,
+  },
+  btnScan: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+  btnScanText: {
+    color: '#166534',
+    fontWeight: 'bold',
+    fontSize: 13,
+    marginLeft: 6,
+  },
+  heroImageContainer: {
+    width: '100%',
+    height: 180,
+    borderRadius: 16,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  heroImage: {
+    width: '100%',
+    height: '100%',
+  },
+  accuracyBadge: {
+    position: 'absolute',
+    bottom: 12,
+    left: 12,
+    backgroundColor: '#DBEAFE',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  accuracyText: {
+    color: '#1D4ED8',
+    fontSize: 10,
+    fontWeight: 'bold',
+    marginLeft: 4,
+  },
+  card: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 24,
+    marginBottom: 24,
+    shadowColor: '#000',
+    elevation: 2,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  cardTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#1E293B',
+  },
+  fuelCenter: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  fuelRingOuter: {
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    borderWidth: 10,
+    borderColor: '#059669',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fuelRingInner: {
+    alignItems: 'center',
+  },
+  fuelValue: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#1E293B',
+  },
+  fuelLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#64748B',
+    marginTop: 2,
+  },
+  macroRow: {
+    marginBottom: 12,
+  },
+  macroHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  macroName: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#64748B',
+  },
+  macroAmount: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#1E293B',
+  },
+  progressBarBg: {
+    height: 4,
+    backgroundColor: '#F1F5F9',
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    borderRadius: 2,
+  },
+  sectionTop: {
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#1E293B',
+  },
+  emptyText: {
+    textAlign: 'center',
+    color: '#64748B',
+    marginTop: 20,
+  },
+  logCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    elevation: 1,
+  },
+  logHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  logIconContainer: {
+    backgroundColor: '#ECFCCB',
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  logInfo: {
+    flex: 1,
+  },
+  logTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#1E293B',
+  },
+  logTime: {
+    fontSize: 10,
+    color: '#64748B',
+  },
+  warningBadge: {
+    fontSize: 10,
+    color: '#DC2626',
+    marginTop: 4,
+    fontWeight: '600',
+  },
+  logMacrosRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+  },
+  logMacroCol: {
+    alignItems: 'center',
+  },
+  logMacroLabel: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: '#64748B',
+  },
+  logMacroValue: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#1E293B',
+  },
+  fab: {
+    position: 'absolute',
+    bottom: 90,
+    right: 20,
+    backgroundColor: '#059669',
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 6,
+    zIndex: 10,
+  },
+  bottomNav: {
+    position: 'absolute',
+    bottom: 20,
+    left: 20,
+    right: 20,
+    backgroundColor: '#FFFFFF',
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderRadius: 30,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  navItem: {
+    alignItems: 'center',
+    paddingHorizontal: 16,
+  },
+  navItemActive: {
+    alignItems: 'center',
+    backgroundColor: '#ECFCCB',
+    paddingHorizontal: 24,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  navText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#64748B',
+    marginTop: 4,
+  },
+  navTextActive: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#4D7C0F',
+    marginTop: 4,
+  },
 });
