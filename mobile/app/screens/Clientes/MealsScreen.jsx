@@ -10,10 +10,12 @@ import {
   Platform,
   ActivityIndicator,
   Alert,
+  Modal,
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { api } from '../../services/api';
+import AudioPlayer from '../../components/AudioPlayer';
 
 export default function MealsScreen({ navigation, route }) {
   const token = route?.params?.token;
@@ -21,6 +23,9 @@ export default function MealsScreen({ navigation, route }) {
   const [loading, setLoading] = useState(false);
   const [mealLogs, setMealLogs] = useState([]);
   const [stats, setStats] = useState({ kcal: 1420, protein: 84, carbs: 120, fats: 32 });
+  const [selectedMeal, setSelectedMeal] = useState(null);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [analysisResult, setAnalysisResult] = useState(null);
 
   useEffect(() => {
     loadMeals();
@@ -101,32 +106,12 @@ export default function MealsScreen({ navigation, route }) {
     try {
       const result = await api.analyzeFoodFromUrl(token, base64Image);
       
-      // Construir mensaje con toda la información
-      let message = `🍽️ ${result.nombre}\n\n`;
-      message += `📊 MACRONUTRIENTES:\n`;
-      message += `• Calorías: ${result.kcal} kcal\n`;
-      message += `• Proteínas: ${result.macros?.p || 0}g\n`;
-      message += `• Carbohidratos: ${result.macros?.c || 0}g\n`;
-      message += `• Grasas: ${result.macros?.g || 0}g\n`;
+      // Guardar resultado y mostrar modal
+      setAnalysisResult(result);
+      setModalVisible(true);
       
-      if (result.ingredientes && result.ingredientes.length > 0) {
-        message += `\n🥗 INGREDIENTES:\n`;
-        message += result.ingredientes.map(ing => `• ${ing}`).join('\n');
-      }
-      
-      if (result.advertencias && result.advertencias.length > 0) {
-        message += `\n\n⚠️ ADVERTENCIAS:\n`;
-        message += result.advertencias.map(adv => `• ${adv}`).join('\n');
-      }
-      
-      message += `\n\n💬 COACH:\n${result.coach_insight}`;
-      message += `\n\n✓ Precisión: ${Math.round((result.confidence_score || 0) * 100)}%`;
-      
-      Alert.alert(
-        "✅ Análisis Completado",
-        message,
-        [{ text: "OK", onPress: loadMeals }]
-      );
+      // Recargar comidas
+      await loadMeals();
     } catch (error) {
       Alert.alert("Error", "No se pudo analizar. " + error.message);
     } finally {
@@ -286,6 +271,100 @@ export default function MealsScreen({ navigation, route }) {
           <Text style={styles.navTextActive}>MEALS</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Modal de Análisis */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {analysisResult && (
+                <>
+                  <View style={styles.modalHeader}>
+                    <Text style={styles.modalTitle}>✅ Análisis Completado</Text>
+                    <TouchableOpacity onPress={() => setModalVisible(false)}>
+                      <Ionicons name="close-circle" size={28} color="#64748B" />
+                    </TouchableOpacity>
+                  </View>
+
+                  <Text style={styles.foodName}>🍽️ {analysisResult.nombre}</Text>
+
+                  <View style={styles.macrosCard}>
+                    <Text style={styles.sectionTitle}>📊 MACRONUTRIENTES</Text>
+                    <View style={styles.macrosGrid}>
+                      <View style={styles.macroItem}>
+                        <Text style={styles.macroValue}>{analysisResult.kcal}</Text>
+                        <Text style={styles.macroLabel}>KCAL</Text>
+                      </View>
+                      <View style={styles.macroItem}>
+                        <Text style={styles.macroValue}>{analysisResult.macros?.p || 0}g</Text>
+                        <Text style={styles.macroLabel}>PROTEÍNAS</Text>
+                      </View>
+                      <View style={styles.macroItem}>
+                        <Text style={styles.macroValue}>{analysisResult.macros?.c || 0}g</Text>
+                        <Text style={styles.macroLabel}>CARBOS</Text>
+                      </View>
+                      <View style={styles.macroItem}>
+                        <Text style={styles.macroValue}>{analysisResult.macros?.g || 0}g</Text>
+                        <Text style={styles.macroLabel}>GRASAS</Text>
+                      </View>
+                    </View>
+                  </View>
+
+                  {analysisResult.ingredientes && analysisResult.ingredientes.length > 0 && (
+                    <View style={styles.section}>
+                      <Text style={styles.sectionTitle}>🥗 INGREDIENTES</Text>
+                      {analysisResult.ingredientes.map((ing, idx) => (
+                        <Text key={idx} style={styles.listItem}>• {ing}</Text>
+                      ))}
+                    </View>
+                  )}
+
+                  {analysisResult.advertencias && analysisResult.advertencias.length > 0 && (
+                    <View style={styles.warningSection}>
+                      <Text style={styles.warningSectionTitle}>⚠️ ADVERTENCIAS</Text>
+                      {analysisResult.advertencias.map((adv, idx) => (
+                        <Text key={idx} style={styles.warningItem}>• {adv}</Text>
+                      ))}
+                    </View>
+                  )}
+
+                  <View style={styles.coachSection}>
+                    <Text style={styles.sectionTitle}>💬 COACH NUTRICIONAL</Text>
+                    <Text style={styles.coachText}>{analysisResult.coach_insight}</Text>
+                    
+                    {/* Reproductor de Audio */}
+                    {analysisResult.audio_base64 && (
+                      <AudioPlayer 
+                        audioBase64={analysisResult.audio_base64}
+                        text={analysisResult.coach_insight}
+                      />
+                    )}
+                  </View>
+
+                  <View style={styles.confidenceSection}>
+                    <Ionicons name="checkmark-circle" size={20} color="#059669" />
+                    <Text style={styles.confidenceText}>
+                      Precisión: {Math.round((analysisResult.confidence_score || 0) * 100)}%
+                    </Text>
+                  </View>
+
+                  <TouchableOpacity 
+                    style={styles.closeButton}
+                    onPress={() => setModalVisible(false)}
+                  >
+                    <Text style={styles.closeButtonText}>Cerrar</Text>
+                  </TouchableOpacity>
+                </>
+              )}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -597,5 +676,120 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#4D7C0F',
     marginTop: 4,
+  },
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: '90%',
+    padding: 24,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#1E293B',
+  },
+  foodName: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#1E293B',
+    marginBottom: 20,
+  },
+  macrosCard: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 20,
+  },
+  macrosGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 12,
+  },
+  macroItem: {
+    alignItems: 'center',
+  },
+  macroValue: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#2E7D32',
+  },
+  macroLabel: {
+    fontSize: 10,
+    color: '#64748B',
+    marginTop: 4,
+  },
+  section: {
+    marginBottom: 20,
+  },
+  listItem: {
+    fontSize: 14,
+    color: '#475569',
+    marginTop: 8,
+    lineHeight: 20,
+  },
+  warningSection: {
+    backgroundColor: '#FEF2F2',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
+  },
+  warningSectionTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#DC2626',
+    marginBottom: 8,
+  },
+  warningItem: {
+    fontSize: 13,
+    color: '#991B1B',
+    marginTop: 6,
+  },
+  coachSection: {
+    backgroundColor: '#ECFDF5',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 20,
+  },
+  coachText: {
+    fontSize: 14,
+    color: '#064E3B',
+    lineHeight: 22,
+    marginTop: 8,
+  },
+  confidenceSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+    gap: 8,
+  },
+  confidenceText: {
+    fontSize: 13,
+    color: '#059669',
+    fontWeight: '600',
+  },
+  closeButton: {
+    backgroundColor: '#2E7D32',
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  closeButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

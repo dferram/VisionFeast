@@ -19,6 +19,7 @@ class FoodAnalysisResponse(BaseModel):
     coach_insight: str
     ingredientes: List[str]
     advertencias: Optional[List[str]] = []
+    audio_base64: Optional[str] = None  # Audio del coach insight
 
 class RecipeRequest(BaseModel):
     ingredients: List[str]
@@ -33,6 +34,7 @@ class RecipeResponse(BaseModel):
     porciones: int
     nutricion: Dict[str, Any]
     ingredientes_detallados: List[Dict[str, str]]
+    audio_base64: Optional[str] = None  # Audio de las instrucciones
 
 class PlanRequest(BaseModel):
     plan_type: str
@@ -43,6 +45,7 @@ class PlanResponse(BaseModel):
     descripcion: str
     contenido: Dict[str, Any]
     consejos: List[str]
+    audio_base64: Optional[str] = None  # Audio del plan
 
 class PatternAnalysisResponse(BaseModel):
     patron_detectado: str

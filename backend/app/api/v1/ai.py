@@ -10,6 +10,7 @@ from app.schemas.ai_schema import (
     PatternAnalysisResponse
 )
 from app.services.gemini_service import gemini_service
+from app.services.elevenlabs_service import elevenlabs_service
 from app.core.security import get_current_active_user
 from app.models.user_model import User
 from app.models.meal_log_model import MealLog
@@ -57,6 +58,14 @@ async def analyze_food_image(
         )
         
         analysis["coach_insight"] = coach_insight
+        
+        # Generar audio del coach insight con ElevenLabs
+        try:
+            audio_base64 = await elevenlabs_service.text_to_speech_base64(coach_insight)
+            analysis["audio_base64"] = audio_base64
+        except Exception as e:
+            print(f"Error generando audio: {e}")
+            analysis["audio_base64"] = None
         
         meal_log = MealLog(
             user_id=current_user.id,
