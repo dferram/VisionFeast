@@ -9,6 +9,7 @@ import RegisterScreen from './app/screens/RegisterScreen';
 import RegisterStep1Screen from './app/screens/Clientes/RegisterStep1Screen';
 import DashboardScreen from './app/screens/Clientes/DashboardScreen';
 import LunchReviewScreen from './app/screens/Nutriologos/LunchReviewScreen';
+import PatientProfileScreen from './app/screens/Nutriologos/PatientProfileScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -30,6 +31,7 @@ export default function App() {
         <Stack.Screen name="RegisterStep1"    component={RegisterStep1Screen}    />
         <Stack.Screen name="Dashboard"        component={DashboardScreen}        />
         <Stack.Screen name="LunchReview"      component={LunchReviewScreen}      />
+        <Stack.Screen name="PatientProfile"   component={PatientProfileScreen}   />
       </Stack.Navigator>
     </NavigationContainer>
   );

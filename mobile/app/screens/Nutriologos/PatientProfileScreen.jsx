@@ -1,439 +1,534 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
-  View, Text, StyleSheet, SafeAreaView, ScrollView,
-  Image, TouchableOpacity, Platform,
+  View,
+  Text,
+  StyleSheet,
+  SafeAreaView,
+  ScrollView,
+  Image,
+  TouchableOpacity,
+  Platform,
 } from 'react-native';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
 
-// ── Design tokens ─────────────────────────────────────────────────────────────
-const GREEN      = '#8DC63F';
-const DARK_BG    = '#1E293B';
-const TEXT_DARK  = '#1E293B';
-const TEXT_MID   = '#64748B';
-const TEXT_LIGHT = '#9CA3AF';
-const WHITE      = '#FFFFFF';
-const SURFACE    = '#F3F4F6';
-const BORDER     = '#E5E7EB';
+// ── Design Constants ────────────────────────────────────────────────────────
+const GREEN        = '#8DC63F';
+const DARK_BG      = '#1E293B';
+const TEXT_DARK    = '#1E293B';
+const TEXT_MID     = '#64748B';
+const TEXT_LIGHT   = '#9CA3AF';
+const WHITE        = '#FFFFFF';
+const SURFACE      = '#F3F4F6';
+const BORDER       = '#E5E7EB';
+const ACCENT_BLUE  = '#3B82F6';
 
-// ── Shared: Bottom Nav ────────────────────────────────────────────────────────
-function NavItem({ icon, label, active, onPress }) {
-  return (
-    <TouchableOpacity
-      style={[styles.navItem, active && styles.navItemActive]}
-      onPress={onPress}
-      activeOpacity={0.7}
-    >
-      <Ionicons name={icon} size={22} color={active ? GREEN : TEXT_MID} />
-      <Text style={[styles.navLabel, active && styles.navLabelActive]}>{label}</Text>
-    </TouchableOpacity>
-  );
-}
-
-// ── Shared: White card wrapper ────────────────────────────────────────────────
-function Card({ children, style }) {
-  return <View style={[styles.card, style]}>{children}</View>;
-}
-
-// ── Sub-component: Preference row ─────────────────────────────────────────────
-function PrefRow({ icon, label, value }) {
-  return (
-    <View style={styles.prefRow}>
-      <View style={styles.prefLeft}>
-        <MaterialCommunityIcons name={icon} size={18} color={GREEN} />
-        <Text style={styles.prefLabel}>{label}</Text>
-      </View>
-      <Text style={styles.prefValue}>{value}</Text>
+// ── Metric Component ────────────────────────────────────────────────────────
+const MetricItem = ({ label, value, unit, icon, iconColor = TEXT_MID }) => (
+  <View style={styles.metricItem}>
+    <View style={styles.metricIconCircle}>
+      <MaterialCommunityIcons name={icon} size={20} color={iconColor} />
     </View>
-  );
-}
-
-// ── Sub-component: Meal card ──────────────────────────────────────────────────
-function MealCard({ name, time, kcal, protein, note, imageUri, hasAlert }) {
-  return (
-    <View style={styles.mealCard}>
-      <View style={styles.mealImageBox}>
-        {imageUri ? (
-          <Image source={{ uri: imageUri }} style={styles.mealThumb} resizeMode="cover" />
-        ) : (
-          <View style={styles.mealThumbPlaceholder}>
-            <Ionicons name="image-outline" size={24} color={TEXT_LIGHT} />
-          </View>
-        )}
-      </View>
-      <View style={styles.mealInfo}>
-        <View style={styles.mealTopRow}>
-          <Text style={styles.mealName}>{name}</Text>
-          <Text style={styles.mealTime}>{time}</Text>
-        </View>
-        <View style={styles.mealBadgeRow}>
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>{kcal} kcal</Text>
-          </View>
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>{protein}g Protein</Text>
-          </View>
-          {hasAlert && (
-            <Ionicons name="alert-circle" size={18} color="#F97316" />
-          )}
-        </View>
-        {note ? <Text style={styles.mealNote}>"{note}"</Text> : null}
+    <View>
+      <Text style={styles.metricLabel}>{label}</Text>
+      <View style={styles.metricValueRow}>
+        <Text style={styles.metricValue}>{value}</Text>
+        {unit && <Text style={styles.metricUnit}> {unit}</Text>}
       </View>
     </View>
-  );
-}
+  </View>
+);
 
-// ── Main Screen ───────────────────────────────────────────────────────────────
+// ── Info Card Component ──────────────────────────────────────────────────────
+const InfoCard = ({ title, children, icon }) => (
+  <View style={styles.card}>
+    <View style={styles.cardHeader}>
+      <View style={styles.cardIconWrap}>
+        <Ionicons name={icon} size={18} color={GREEN} />
+      </View>
+      <Text style={styles.cardTitle}>{title}</Text>
+    </View>
+    {children}
+  </View>
+);
+
 export default function PatientProfileScreen({ navigation }) {
-  const [activeNav, setActiveNav] = useState('patients');
-
-  // Bar chart heights (MON→SUN)
-  const bars = [
-    { day: 'MON', h: 32, active: true },
-    { day: 'TUE', h: 52 },
-    { day: 'WED', h: 28 },
-    { day: 'THU', h: 44 },
-    { day: 'FRI', h: 56 },
-    { day: 'SAT', h: 48 },
-    { day: 'SUN', h: 60 },
-  ];
-
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
-
-        {/* ── Header ──────────────────────────────────────────────────────── */}
+        {/* ── Custom Header ────────────────────────────────────────────────── */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation?.goBack()} style={styles.backBtn}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-            <Ionicons name="arrow-back" size={22} color={TEXT_DARK} />
+          <TouchableOpacity 
+            onPress={() => navigation?.goBack()}
+            style={styles.backBtn}
+          >
+            <Ionicons name="arrow-back" size={24} color={TEXT_DARK} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>
-            <Text style={styles.headerBlack}>Vision </Text>
-            <Text style={styles.headerGreen}>Feast</Text>
-          </Text>
-          <View style={{ width: 22 }} />
-        </View>
-
-        {/* ── Breadcrumb ───────────────────────────────────────────────────── */}
-        <Text style={styles.breadcrumb}>
-          Perfiles {'>'} <Text style={styles.breadcrumbBold}>Guadalupe Bazaldúa</Text>
-        </Text>
-        <Text style={styles.pageTitle}>Patient Profile</Text>
-
-        {/* ── Action Buttons ───────────────────────────────────────────────── */}
-        <View style={styles.actionRow}>
-          <TouchableOpacity style={styles.btnGreen} activeOpacity={0.85}>
-            <Ionicons name="pencil-outline" size={15} color={WHITE} />
-            <Text style={styles.btnGreenText}>Edit{'\n'}Protocol</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.btnDark} activeOpacity={0.85}>
-            <Ionicons name="add" size={17} color={WHITE} />
-            <Text style={styles.btnDarkText}>New{'\n'}Consultation</Text>
+          <Text style={styles.headerTitle}>Patient Profile</Text>
+          <TouchableOpacity style={styles.editBtn}>
+            <Ionicons name="create-outline" size={24} color={TEXT_MID} />
           </TouchableOpacity>
         </View>
 
-        {/* ── Patient card ─────────────────────────────────────────────────── */}
-        <Card style={styles.patientCard}>
-          <Image
-            source={{ uri: 'https://randomuser.me/api/portraits/women/68.jpg' }}
-            style={styles.patientAvatar}
-          />
-          <Text style={styles.patientName}>Guadalupe Bazaldúa</Text>
-          <Text style={styles.patientMeta}>21 años | 52kg | 1,64</Text>
-
+        {/* ── Section 1: Profile Header ────────────────────────────────────── */}
+        <View style={styles.profileHeader}>
+          <View style={styles.avatarContainer}>
+            <Image
+              source={{ uri: 'https://randomuser.me/api/portraits/women/65.jpg' }}
+              style={styles.avatar}
+            />
+            <View style={styles.statusDot} />
+          </View>
+          <Text style={styles.patientName}>Elena Rodríguez</Text>
+          <Text style={styles.patientId}>Patient ID: #VF-90210</Text>
+          
           <View style={styles.tagRow}>
-            <View style={[styles.tag, styles.tagGreen]}>
-              <Text style={styles.tagTextGreen}>MUSCLE GAIN</Text>
+            <View style={[styles.tag, { backgroundColor: '#E0F2FE' }]}>
+              <Text style={[styles.tagText, { color: '#0369A1' }]}>Female, 28</Text>
             </View>
-            <View style={[styles.tag, styles.tagOrange]}>
-              <Text style={styles.tagTextOrange}>HIGH PROTEIN</Text>
-            </View>
-          </View>
-
-          {/* History */}
-          <Text style={styles.sectionLabel}>HISTORY & PATHOLOGIES</Text>
-          <Text style={styles.bodyText}>
-            Iron deficiency diagnosed in 2022. Occasional mild gastritis.
-            Recovering from ACL surgery (8 months post-op).
-          </Text>
-
-          {/* Allergies */}
-          <Text style={[styles.sectionLabel, { marginTop: 14 }]}>ALLERGIES & RESTRICTIONS</Text>
-          <View style={styles.allergyRow}>
-            <View style={styles.allergyChipRed}>
-              <Ionicons name="warning-outline" size={12} color="#EF4444" />
-              <Text style={styles.allergyTextRed}>Shellfish</Text>
-            </View>
-            <View style={styles.allergyChipGray}>
-              <Ionicons name="ban-outline" size={12} color={TEXT_MID} />
-              <Text style={styles.allergyTextGray}>Cilantro</Text>
+            <View style={[styles.tag, { backgroundColor: '#F0FDF4' }]}>
+              <Text style={[styles.tagText, { color: '#166534' }]}>Active User</Text>
             </View>
           </View>
-
-          {/* Primary Goal */}
-          <View style={styles.goalBox}>
-            <Text style={styles.goalLabel}>PRIMARY GOAL</Text>
-            <View style={styles.goalContent}>
-              <Text style={styles.goalTitle}>Muscle{'\n'}Hypertrophy</Text>
-              <Text style={styles.goalTarget}>Target: +4kg{'\n'}LBM</Text>
-            </View>
-          </View>
-        </Card>
-
-        {/* ══════════════ SECTION 2 ══════════════ */}
-
-        {/* ── Quick Preferences ────────────────────────────────────────────── */}
-        <Card>
-          <Text style={styles.cardTitle}>Quick Preferences</Text>
-          <PrefRow icon="coffee-outline" label="Coffee Preference" value="Black / No Sugar" />
-          <View style={styles.prefDivider} />
-          <PrefRow icon="silverware-fork-knife" label="Meal Frequency" value="5 per day" />
-          <View style={styles.prefDivider} />
-          <PrefRow icon="timer-outline" label="Fast Window" value="12:12 Cycle" />
-        </Card>
-
-        {/* ── Compliance Score ─────────────────────────────────────────────── */}
-        <Card>
-          <View style={styles.complianceHeader}>
-            <View>
-              <Text style={styles.cardTitle}>Compliance Score</Text>
-              <Text style={styles.complianceSub}>Last 30 days performance</Text>
-            </View>
-            <View style={styles.excellentBadge}>
-              <Text style={styles.excellentText}>EXCELLENT</Text>
-            </View>
-          </View>
-
-          {/* Ring */}
-          <View style={styles.ringWrap}>
-            <View style={styles.ring}>
-              <Text style={styles.ringValue}>85%</Text>
-              <Text style={styles.ringLabel}>TOTAL</Text>
-            </View>
-          </View>
-
-          {/* Stats row */}
-          <View style={styles.complianceStats}>
-            <View>
-              <Text style={styles.statLabel}>Plan Accuracy</Text>
-              <Text style={styles.statValue}>92%</Text>
-            </View>
-            <View>
-              <Text style={styles.statLabel}>Logging Habit</Text>
-              <Text style={styles.statValue}>78%</Text>
-            </View>
-          </View>
-        </Card>
-
-        {/* ── Photo Logging ────────────────────────────────────────────────── */}
-        <Card>
-          <View style={styles.photoLogHeader}>
-            <Text style={styles.cardTitle}>Photo Logging</Text>
-            <Text style={styles.dotsMenu}>• • •</Text>
-          </View>
-
-          {/* Bar chart */}
-          <View style={styles.chartWrap}>
-            {bars.map((b) => (
-              <View key={b.day} style={styles.barCol}>
-                <View style={[
-                  styles.bar,
-                  { height: b.h, backgroundColor: b.active ? '#4ADE80' : GREEN },
-                ]} />
-                <Text style={styles.barDay}>{b.day}</Text>
-              </View>
-            ))}
-          </View>
-
-          <Text style={styles.chartNote}>
-            Consistency increased by 12% since last week. Patient is highly compliant
-            with breakfast and lunch photos.
-          </Text>
-        </Card>
-
-        {/* ══════════════ SECTION 3 ══════════════ */}
-
-        {/* ── Recent Meals ─────────────────────────────────────────────────── */}
-        <View style={styles.mealsHeader}>
-          <Text style={styles.cardTitle}>Recent Meals</Text>
-          <TouchableOpacity>
-            <Text style={styles.galleryLink}>View Gallery →</Text>
-          </TouchableOpacity>
         </View>
 
-        <MealCard
-          name="Post-Workout Salmon Bowl"
-          time={'Today,\n1:45 PM'}
-          kcal={650}
-          protein={45}
-          note="Added extra spinach as requested. Feeling very full."
-          imageUri="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&q=80"
-        />
-        <MealCard
-          name="Steel-Cut Oats with Whey"
-          time={'Today,\n8:30 AM'}
-          kcal={420}
-          protein={30}
-          note="Quick breakfast before meeting. Swapped almonds for walnuts."
-          imageUri="https://images.unsplash.com/photo-1517673132405-a56a62b18caf?w=400&q=80"
-        />
-        <MealCard
-          name="Casein Shake & Berries"
-          time={'Yesterday,\n10:15 PM'}
-          kcal={180}
-          protein={25}
-          note={null}
-          imageUri={null}
-          hasAlert
-        />
+        {/* ── Section 2: Core Metrics ──────────────────────────────────────── */}
+        <View style={styles.metricsGrid}>
+          <View style={styles.metricsRow}>
+            <MetricItem 
+              label="Weight" 
+              value="64.5" 
+              unit="kg" 
+              icon="scale-bathroom" 
+              iconColor="#8B5CF6"
+            />
+            <MetricItem 
+              label="Height" 
+              value="168" 
+              unit="cm" 
+              icon="ruler" 
+              iconColor="#F59E0B"
+            />
+          </View>
+          <View style={styles.metricsRow}>
+            <MetricItem 
+              label="BMI" 
+              value="22.8" 
+              icon="chart-bar" 
+              iconColor="#10B981"
+            />
+            <MetricItem 
+              label="Body Fat" 
+              value="24.2" 
+              unit="%" 
+              icon="water-percent" 
+              iconColor="#EF4444"
+            />
+          </View>
+        </View>
+
+        {/* ── Section 3: Health Info & Goals ────────────────────────────────── */}
+        <InfoCard title="Health Information" icon="medical-outline">
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Medical Context</Text>
+            <Text style={styles.infoValue}>Mild asthma, occasional knee pain during high impact.</Text>
+          </View>
+          <View style={styles.divider} />
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Allergies</Text>
+            <Text style={styles.infoValue}>None reported</Text>
+          </View>
+          <View style={styles.divider} />
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Specific Diet</Text>
+            <Text style={styles.infoValue}>Pescatarian</Text>
+          </View>
+        </InfoCard>
+
+        <InfoCard title="Objectives & Targets" icon="flag-outline">
+          <View style={styles.goalRow}>
+            <View style={styles.goalInfo}>
+              <Text style={styles.infoLabel}>Primary Goal</Text>
+              <Text style={styles.goalTitle}>Maintenance & Definition</Text>
+            </View>
+            <View style={styles.kcalBadge}>
+              <Text style={styles.kcalValue}>2,100</Text>
+              <Text style={styles.kcalLabel}>kcal/day</Text>
+            </View>
+          </View>
+          
+          <View style={styles.macroProgressContainer}>
+            <Text style={styles.macroSubLabel}>Target Macros</Text>
+            <View style={styles.macroBarsRow}>
+              <View style={styles.macroBarItem}>
+                <View style={[styles.macroBar, { height: 80, backgroundColor: '#3B82F6' }]} />
+                <Text style={styles.macroName}>PRO</Text>
+                <Text style={styles.macroAmount}>130g</Text>
+              </View>
+              <View style={styles.macroBarItem}>
+                <View style={[styles.macroBar, { height: 110, backgroundColor: '#8DC63F' }]} />
+                <Text style={styles.macroName}>CAR</Text>
+                <Text style={styles.macroAmount}>220g</Text>
+              </View>
+              <View style={styles.macroBarItem}>
+                <View style={[styles.macroBar, { height: 60, backgroundColor: '#F59E0B' }]} />
+                <Text style={styles.macroName}>FAT</Text>
+                <Text style={styles.macroAmount}>65g</Text>
+              </View>
+            </View>
+          </View>
+        </InfoCard>
+
+        {/* ── Action Button ────────────────────────────────────────────────── */}
+        <TouchableOpacity style={styles.primaryActionBtn}>
+          <Text style={styles.primaryActionText}>VIEW RECENT LOGS</Text>
+          <Ionicons name="chevron-forward" size={18} color={WHITE} />
+        </TouchableOpacity>
 
       </ScrollView>
 
-      {/* ── Bottom Nav ───────────────────────────────────────────────────────── */}
+      {/* ── Bottom Nav (Consistent with Nutriologos flow) ──────────────────── */}
       <View style={styles.bottomNav}>
-        <NavItem icon="grid-outline"         label="DASHBOARD" active={activeNav === 'dashboard'} onPress={() => setActiveNav('dashboard')} />
-        <NavItem icon="people"               label="PATIENTS"  active={activeNav === 'patients'}  onPress={() => setActiveNav('patients')} />
-        <NavItem icon="person-circle-outline" label="PROFILE"  active={activeNav === 'profile'}   onPress={() => setActiveNav('profile')} />
+        <TouchableOpacity style={styles.navItem}>
+          <Ionicons name="grid-outline" size={24} color={TEXT_MID} />
+          <Text style={styles.navText}>DASHBOARD</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity style={styles.navItemActive}>
+          <Ionicons name="people" size={24} color={GREEN} />
+          <Text style={styles.navTextActive}>PATIENTS</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity style={styles.navItem}>
+          <Ionicons name="person-circle-outline" size={24} color={TEXT_MID} />
+          <Text style={styles.navText}>PROFILE</Text>
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
 }
 
-// ── Styles ────────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  safeArea:  { flex: 1, backgroundColor: '#FAFAFA' },
-  scroll:    { paddingHorizontal: 20, paddingTop: Platform.OS === 'android' ? 40 : 10, paddingBottom: 110 },
-
-  // Header
-  header:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
-  backBtn:      { padding: 4 },
-  headerTitle:  { fontSize: 18, fontWeight: '800', letterSpacing: 0.5 },
-  headerBlack:  { color: TEXT_DARK },
-  headerGreen:  { color: GREEN },
-
-  // Breadcrumb / page title
-  breadcrumb:     { fontSize: 12, color: TEXT_MID, marginBottom: 4 },
-  breadcrumbBold: { fontWeight: '700', color: TEXT_DARK },
-  pageTitle:      { fontSize: 28, fontWeight: '800', color: TEXT_DARK, marginBottom: 16 },
-
-  // Action buttons
-  actionRow: { flexDirection: 'row', gap: 12, marginBottom: 20 },
-  btnGreen: {
-    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
-    backgroundColor: GREEN, borderRadius: 14, paddingVertical: 14,
-    shadowColor: GREEN, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4,
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#FAFAFA',
   },
-  btnGreenText: { fontSize: 13, fontWeight: '700', color: WHITE, lineHeight: 18 },
-  btnDark: {
-    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
-    backgroundColor: DARK_BG, borderRadius: 14, paddingVertical: 14,
+  scroll: {
+    paddingBottom: 120,
   },
-  btnDarkText: { fontSize: 13, fontWeight: '700', color: WHITE, lineHeight: 18 },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === 'android' ? 40 : 10,
+    marginBottom: 20,
+  },
+  backBtn: {
+    padding: 8,
+    borderRadius: 12,
+    backgroundColor: WHITE,
+    borderWidth: 1,
+    borderColor: BORDER,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: TEXT_DARK,
+  },
+  editBtn: {
+    padding: 8,
+  },
 
-  // White card
+  // ── Section 1 Styles ──────────────────────────────────────────────────────
+  profileHeader: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  avatarContainer: {
+    position: 'relative',
+    marginBottom: 12,
+  },
+  avatar: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    borderWidth: 4,
+    borderColor: WHITE,
+  },
+  statusDot: {
+    position: 'absolute',
+    bottom: 5,
+    right: 5,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: GREEN,
+    borderWidth: 3,
+    borderColor: WHITE,
+  },
+  patientName: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: TEXT_DARK,
+    marginBottom: 4,
+  },
+  patientId: {
+    fontSize: 12,
+    color: TEXT_LIGHT,
+    fontWeight: '600',
+    marginBottom: 12,
+  },
+  tagRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  tag: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  tagText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+
+  // ── Section 2 Styles ──────────────────────────────────────────────────────
+  metricsGrid: {
+    paddingHorizontal: 20,
+    marginBottom: 24,
+    gap: 12,
+  },
+  metricsRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  metricItem: {
+    flex: 1,
+    backgroundColor: WHITE,
+    borderRadius: 16,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  metricIconCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: SURFACE,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  metricLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: TEXT_MID,
+    marginBottom: 2,
+  },
+  metricValueRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+  },
+  metricValue: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: TEXT_DARK,
+  },
+  metricUnit: {
+    fontSize: 12,
+    color: TEXT_MID,
+    fontWeight: '600',
+    paddingBottom: 2,
+  },
+
+  // ── Section 3 Styles ──────────────────────────────────────────────────────
   card: {
-    backgroundColor: WHITE, borderRadius: 20, padding: 18, marginBottom: 16,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 10, elevation: 3,
+    backgroundColor: WHITE,
+    borderRadius: 20,
+    marginHorizontal: 20,
+    padding: 20,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 3,
   },
-  cardTitle: { fontSize: 18, fontWeight: '700', color: TEXT_DARK, marginBottom: 14 },
-
-  // Patient card
-  patientCard:   { alignItems: 'center' },
-  patientAvatar: { width: 100, height: 100, borderRadius: 20, marginBottom: 12 },
-  patientName:   { fontSize: 22, fontWeight: '800', color: TEXT_DARK, marginBottom: 4 },
-  patientMeta:   { fontSize: 13, color: TEXT_MID, marginBottom: 14 },
-
-  tagRow:       { flexDirection: 'row', gap: 8, marginBottom: 20 },
-  tag:          { borderRadius: 20, paddingHorizontal: 14, paddingVertical: 6 },
-  tagGreen:     { backgroundColor: '#ECFDF5' },
-  tagOrange:    { backgroundColor: '#FFF7ED' },
-  tagTextGreen: { fontSize: 11, fontWeight: '700', color: GREEN },
-  tagTextOrange:{ fontSize: 11, fontWeight: '700', color: '#F97316' },
-
-  sectionLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 1, color: TEXT_MID, marginBottom: 6, alignSelf: 'flex-start' },
-  bodyText:     { fontSize: 13, color: TEXT_DARK, lineHeight: 20, alignSelf: 'flex-start' },
-
-  allergyRow:     { flexDirection: 'row', gap: 8, marginTop: 4, alignSelf: 'flex-start' },
-  allergyChipRed: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#FEF2F2', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6 },
-  allergyChipGray:{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: SURFACE,   borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6 },
-  allergyTextRed: { fontSize: 12, fontWeight: '600', color: '#EF4444' },
-  allergyTextGray:{ fontSize: 12, fontWeight: '600', color: TEXT_MID },
-
-  goalBox:     { backgroundColor: SURFACE, borderRadius: 14, padding: 14, marginTop: 16, width: '100%' },
-  goalLabel:   { fontSize: 10, fontWeight: '700', letterSpacing: 1, color: TEXT_LIGHT, marginBottom: 8 },
-  goalContent: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' },
-  goalTitle:   { fontSize: 22, fontWeight: '800', color: GREEN, lineHeight: 28 },
-  goalTarget:  { fontSize: 13, color: TEXT_MID, textAlign: 'right', lineHeight: 20 },
-
-  // Preferences
-  prefRow:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 10 },
-  prefLeft:    { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  prefLabel:   { fontSize: 14, color: TEXT_DARK, fontWeight: '500' },
-  prefValue:   { fontSize: 14, fontWeight: '700', color: TEXT_DARK },
-  prefDivider: { height: 1, backgroundColor: BORDER },
-
-  // Compliance
-  complianceHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 0 },
-  complianceSub:    { fontSize: 12, color: TEXT_MID, marginTop: 2, marginBottom: 14 },
-  excellentBadge:   { backgroundColor: '#ECFDF5', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 5 },
-  excellentText:    { fontSize: 11, fontWeight: '700', color: GREEN },
-
-  ringWrap:  { alignItems: 'center', marginVertical: 16 },
-  ring: {
-    width: 130, height: 130, borderRadius: 65,
-    borderWidth: 10, borderColor: GREEN,
-    justifyContent: 'center', alignItems: 'center',
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 16,
   },
-  ringValue: { fontSize: 30, fontWeight: '800', color: TEXT_DARK },
-  ringLabel: { fontSize: 11, fontWeight: '700', color: TEXT_MID, letterSpacing: 1 },
+  cardIconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: '#F0FDF4',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  cardTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: TEXT_DARK,
+  },
+  infoRow: {
+    marginVertical: 4,
+  },
+  infoLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: TEXT_LIGHT,
+    marginBottom: 4,
+  },
+  infoValue: {
+    fontSize: 14,
+    color: TEXT_DARK,
+    fontWeight: '500',
+    lineHeight: 20,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: SURFACE,
+    marginVertical: 12,
+  },
+  goalRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  goalInfo: {
+    flex: 1,
+  },
+  goalTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: TEXT_DARK,
+  },
+  kcalBadge: {
+    backgroundColor: DARK_BG,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  kcalValue: {
+    color: WHITE,
+    fontSize: 18,
+    fontWeight: '800',
+  },
+  kcalLabel: {
+    color: '#94A3B8',
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  macroProgressContainer: {
+    marginTop: 8,
+  },
+  macroSubLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: TEXT_MID,
+    marginBottom: 16,
+  },
+  macroBarsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'flex-end',
+    height: 120,
+  },
+  macroBarItem: {
+    alignItems: 'center',
+  },
+  macroBar: {
+    width: 24,
+    borderRadius: 12,
+    marginBottom: 8,
+  },
+  macroName: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: TEXT_MID,
+  },
+  macroAmount: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: TEXT_DARK,
+  },
 
-  complianceStats: { flexDirection: 'row', justifyContent: 'space-around', marginTop: 4 },
-  statLabel:       { fontSize: 12, color: TEXT_MID, marginBottom: 4 },
-  statValue:       { fontSize: 20, fontWeight: '800', color: TEXT_DARK },
+  // ── Action Button Styles ──────────────────────────────────────────────────
+  primaryActionBtn: {
+    backgroundColor: GREEN,
+    marginHorizontal: 20,
+    paddingVertical: 18,
+    borderRadius: 50,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    marginTop: 10,
+    shadowColor: GREEN,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  primaryActionText: {
+    color: WHITE,
+    fontSize: 14,
+    fontWeight: '800',
+    letterSpacing: 1,
+  },
 
-  // Photo Logging
-  photoLogHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
-  dotsMenu:       { fontSize: 14, color: GREEN, letterSpacing: 2 },
-
-  chartWrap: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', height: 70, marginBottom: 14 },
-  barCol:    { alignItems: 'center', gap: 4, flex: 1 },
-  bar:       { width: '70%', borderRadius: 4 },
-  barDay:    { fontSize: 9, fontWeight: '600', color: TEXT_MID },
-
-  chartNote: { fontSize: 12, color: TEXT_MID, lineHeight: 18 },
-
-  // Recent Meals
-  mealsHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  galleryLink: { fontSize: 13, fontWeight: '700', color: GREEN },
-
-  mealCard:    { backgroundColor: WHITE, borderRadius: 16, padding: 14, marginBottom: 12, flexDirection: 'row', gap: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 6, elevation: 2 },
-  mealImageBox:{ width: 72, justifyContent: 'center' },
-  mealThumb:   { width: 72, height: 72, borderRadius: 12 },
-  mealThumbPlaceholder: { width: 72, height: 72, borderRadius: 12, backgroundColor: SURFACE, justifyContent: 'center', alignItems: 'center' },
-
-  mealInfo:    { flex: 1 },
-  mealTopRow:  { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 },
-  mealName:    { fontSize: 14, fontWeight: '700', color: TEXT_DARK, flex: 1, lineHeight: 20 },
-  mealTime:    { fontSize: 11, color: TEXT_MID, textAlign: 'right', lineHeight: 16, marginLeft: 6 },
-
-  mealBadgeRow: { flexDirection: 'row', gap: 6, alignItems: 'center', marginBottom: 6 },
-  badge:        { backgroundColor: SURFACE, borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 },
-  badgeText:    { fontSize: 11, fontWeight: '600', color: TEXT_DARK },
-
-  mealNote: { fontSize: 12, color: TEXT_MID, fontStyle: 'italic', lineHeight: 17 },
-
-  // Bottom Nav
+  // ── Navigation Styles ─────────────────────────────────────────────────────
   bottomNav: {
-    position: 'absolute', bottom: Platform.OS === 'ios' ? 20 : 12, left: 20, right: 20,
-    backgroundColor: WHITE, flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center',
-    paddingVertical: 12, borderRadius: 30,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 16, elevation: 8,
+    position: 'absolute',
+    bottom: Platform.OS === 'ios' ? 25 : 15,
+    left: 20,
+    right: 20,
+    backgroundColor: WHITE,
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderRadius: 35,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 16,
+    elevation: 8,
   },
-  navItem:       { alignItems: 'center', paddingHorizontal: 16, paddingVertical: 4 },
-  navItemActive: { backgroundColor: '#ECFDF5', paddingHorizontal: 20, paddingVertical: 8, borderRadius: 20 },
-  navLabel:      { fontSize: 9, fontWeight: '600', color: TEXT_MID, marginTop: 3, letterSpacing: 0.5 },
-  navLabelActive:{ color: GREEN, fontWeight: '700' },
+  navItem: {
+    alignItems: 'center',
+    paddingHorizontal: 16,
+  },
+  navItemActive: {
+    backgroundColor: '#F0FDF4',
+    paddingHorizontal: 24,
+    paddingVertical: 8,
+    borderRadius: 20,
+    alignItems: 'center',
+  },
+  navText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: TEXT_MID,
+    marginTop: 4,
+  },
+  navTextActive: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: GREEN,
+    marginTop: 4,
+  },
 });
