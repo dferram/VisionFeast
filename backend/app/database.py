@@ -3,6 +3,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from beanie import init_beanie
 from app.core.config import settings
 from app.models.user_model import User
+from app.models.professional_model import ProfessionalProfile
 from app.models.meal_log_model import MealLog
 from app.models.recipe_model import Recipe
 from app.models.plan_model import Plan
@@ -19,7 +20,7 @@ async def connect_to_mongo():
 
     await init_beanie(
         database=db.client.get_default_database(),
-        document_models=[User, MealLog, Recipe, Plan]
+        document_models=[User, ProfessionalProfile, MealLog, Recipe, Plan]
     )
 
     print("✅ Conectado a MongoDB y Beanie inicializado con todos los modelos")

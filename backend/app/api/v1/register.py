@@ -2,6 +2,7 @@
 from fastapi import APIRouter, HTTPException, status
 from passlib.context import CryptContext
 from datetime import datetime, timedelta
+from jose import jwt
 
 from app.schemas.register_schemas import (
     ClientRegisterRequest,
@@ -10,8 +11,8 @@ from app.schemas.register_schemas import (
     RegisterResponse
 )
 from app.models.user_model import User, UserRole, AuthProvider
+from app.models.professional_model import ProfessionalProfile
 from app.core.config import settings
-from jose import jwt
 
 router = APIRouter(tags=["register"])
 
@@ -97,43 +98,44 @@ async def register_coach(request: CoachRegisterRequest):
     - **bio**: Optional professional biography
     - **phone**: Optional contact phone
     """
-    # Check if user already exists
-    existing_user = await User.find_one(User.email == request.email)
-    if existing_user:
+    # Check if professional already exists
+    existing_prof = await ProfessionalProfile.find_one(ProfessionalProfile.email == request.email)
+    if existing_prof:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="El correo electrónico ya está registrado"
         )
     
-    # Create new coach user
-    user = User(
+    # Create new coach professional
+    professional = ProfessionalProfile(
+        tipo="entrenador",
+        nombre_completo=request.full_name,
         email=request.email,
-        full_name=request.full_name,
         hashed_password=hash_password(request.password),
-        auth_provider=AuthProvider.EMAIL,
-        role=UserRole.COACH,
-        license_number=request.license_number,
-        specialization=request.specialization,
-        years_experience=request.years_experience,
-        certifications=request.certifications,
-        bio=request.bio,
-        phone=request.phone,
+        perfil_profesional={
+            "especialidad": request.specialization,
+            "biografia": request.bio or ""
+        },
+        cedula_profesional=request.license_number,
+        anos_experiencia=request.years_experience,
+        certificaciones=request.certifications or [],
+        telefono=request.phone or ""
     )
     
-    await user.insert()
+    await professional.insert()
     
     # Create access token
-    access_token = create_access_token(data={"sub": user.email, "role": user.role})
+    access_token = create_access_token(data={"sub": professional.email, "role": "coach"})
     
     return RegisterResponse(
         message="Entrenador registrado exitosamente",
         user={
-            "id": str(user.id),
-            "email": user.email,
-            "full_name": user.full_name,
-            "role": user.role,
-            "license_number": user.license_number,
-            "specialization": user.specialization,
+            "id": str(professional.id),
+            "email": professional.email,
+            "full_name": professional.nombre_completo,
+            "role": "coach",
+            "license_number": professional.cedula_profesional,
+            "specialization": professional.perfil_profesional.get("especialidad")
         },
         access_token=access_token,
         token_type="bearer"
@@ -155,43 +157,44 @@ async def register_nutritionist(request: NutritionistRegisterRequest):
     - **bio**: Optional professional biography
     - **phone**: Optional contact phone
     """
-    # Check if user already exists
-    existing_user = await User.find_one(User.email == request.email)
-    if existing_user:
+    # Check if professional already exists
+    existing_prof = await ProfessionalProfile.find_one(ProfessionalProfile.email == request.email)
+    if existing_prof:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="El correo electrónico ya está registrado"
         )
     
-    # Create new nutritionist user
-    user = User(
+    # Create new nutritionist professional
+    professional = ProfessionalProfile(
+        tipo="nutriologo",
+        nombre_completo=request.full_name,
         email=request.email,
-        full_name=request.full_name,
         hashed_password=hash_password(request.password),
-        auth_provider=AuthProvider.EMAIL,
-        role=UserRole.NUTRITIONIST,
-        license_number=request.license_number,
-        specialization=request.specialization,
-        years_experience=request.years_experience,
-        certifications=request.certifications,
-        bio=request.bio,
-        phone=request.phone,
+        perfil_profesional={
+            "especialidad": request.specialization,
+            "biografia": request.bio or ""
+        },
+        cedula_profesional=request.license_number,
+        anos_experiencia=request.years_experience,
+        certificaciones=request.certifications or [],
+        telefono=request.phone or ""
     )
     
-    await user.insert()
+    await professional.insert()
     
     # Create access token
-    access_token = create_access_token(data={"sub": user.email, "role": user.role})
+    access_token = create_access_token(data={"sub": professional.email, "role": "nutritionist"})
     
     return RegisterResponse(
         message="Nutriólogo registrado exitosamente",
         user={
-            "id": str(user.id),
-            "email": user.email,
-            "full_name": user.full_name,
-            "role": user.role,
-            "license_number": user.license_number,
-            "specialization": user.specialization,
+            "id": str(professional.id),
+            "email": professional.email,
+            "full_name": professional.nombre_completo,
+            "role": "nutritionist",
+            "license_number": professional.cedula_profesional,
+            "specialization": professional.perfil_profesional.get("especialidad")
         },
         access_token=access_token,
         token_type="bearer"

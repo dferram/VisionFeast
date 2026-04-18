@@ -165,10 +165,21 @@ const RegisterScreen = ({ navigation, route }) => {
           {
             text: 'OK',
             onPress: () => {
-              // Guardar token y navegar
+              // Guardar token
               console.log('Token:', response.access_token);
               console.log('User:', response.user);
-              navigation.navigate('Login');
+              
+              // Navegar según el tipo de usuario
+              if (profileType === 'client') {
+                // Para clientes, ir al dashboard
+                navigation.navigate('Dashboard', { user: response.user, token: response.access_token });
+              } else if (profileType === 'nutritionist') {
+                // Para nutriólogos, ir a la pantalla de revisión de comidas
+                navigation.navigate('LunchReview', { user: response.user, token: response.access_token });
+              } else if (profileType === 'coach') {
+                // Para entrenadores, ir al dashboard (o su pantalla específica)
+                navigation.navigate('Dashboard', { user: response.user, token: response.access_token });
+              }
             },
           },
         ]

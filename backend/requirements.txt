@@ -9,7 +9,7 @@ pymongo==4.6.3
 google-generativeai
 elevenlabs
 python-jose[cryptography]
-passlib[bcrypt]
+passlib==1.7.4
 bcrypt==4.1.2
 python-multipart
 google-auth

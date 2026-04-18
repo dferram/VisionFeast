@@ -27,13 +27,26 @@ const LoginScreen = ({ navigation }) => {
     }
     setLoading(true);
     try {
-      // Verifica que el backend esté disponible
-      const ping = await api.ping();
-      console.log('Backend respondio:', ping);
-      // Navegar a la pantalla principal
-      navigation.navigate('Welcome');
+      // Llamar al endpoint de login
+      const response = await api.login(email, password);
+      console.log('Login exitoso:', response);
+      
+      // Navegar según el rol del usuario
+      if (response.user.role === 'client') {
+        navigation.navigate('Dashboard', { user: response.user, token: response.access_token });
+      } else if (response.user.role === 'nutritionist') {
+        navigation.navigate('LunchReview', { user: response.user, token: response.access_token });
+      } else if (response.user.role === 'coach') {
+        navigation.navigate('Dashboard', { user: response.user, token: response.access_token });
+      } else {
+        // Fallback para otros roles
+        navigation.navigate('Welcome');
+      }
     } catch (error) {
-      Alert.alert('Error de conexión', 'No se pudo conectar al servidor. Verifica que el backend esté corriendo.');
+      Alert.alert(
+        'Error de Login', 
+        error.message || 'Credenciales incorrectas. Por favor verifica tu correo y contraseña.'
+      );
       console.error('Error login:', error);
     } finally {
       setLoading(false);
