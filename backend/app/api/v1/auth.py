@@ -12,8 +12,7 @@ from app.schemas.auth_schema import (
 from app.schemas.login_schemas import LoginRequest, LoginResponse
 from app.services.auth_service import AuthService
 from app.core.security import get_current_active_user
-from app.models.user_model import User
-from app.models.professional_model import ProfessionalProfile
+from app.models.user_model import User, AuthProvider
 from app.core.config import settings
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -69,7 +68,7 @@ async def register(request: RegisterRequest):
         full_name=request.full_name,
         hashed_password=hashed_pw,
         role=role,
-        auth_provider="email",
+        auth_provider=AuthProvider.EMAIL,
         is_active=True,
         # Campos de cliente
         dietary_preferences=request.dietary_preferences or [],

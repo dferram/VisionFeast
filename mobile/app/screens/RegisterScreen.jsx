@@ -12,7 +12,7 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { api } from '../services/api';
+import API_BASE_URL from '../services/api';
 
 // ── Ícono ojo (SVG-less, usando texto unicode) ──────────────────────────────
 const EyeIcon = ({ visible }) => (
@@ -147,7 +147,13 @@ const RegisterScreen = ({ navigation, route }) => {
         registerData.years_experience = parseInt(form.years_experience) || 0;
       }
 
-      const response = await api.registerClient(registerData); // registerClient apunta a /auth/register
+      const res = await fetch(`${API_BASE_URL}/api/v1/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(registerData),
+      });
+      const response = await res.json();
+      if (!res.ok) throw new Error(response.detail || 'Error en el registro');
 
       // Navegar al Dashboard pasando el token
       Alert.alert(

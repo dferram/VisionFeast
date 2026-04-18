@@ -11,26 +11,36 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { api } from '../../services/api';
+import API_BASE_URL from '../../services/api';
 
 export default function DashboardScreen({ route }) {
-  // El token viene por parámetro de navegación tras el login
   const token = route?.params?.token || null;
+  // Si el usuario ya viene del parámetro de navegación lo usamos directamente
+  const routeUser = route?.params?.user || null;
 
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(routeUser);
   const [mealLogs, setMealLogs] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!routeUser);
 
   useEffect(() => {
     async function loadData() {
       try {
         if (token) {
-          const [profile, meals] = await Promise.all([
-            api.getMe(token),
-            api.getMealLogs(token).catch(() => []),
-          ]);
-          setUser(profile);
-          setMealLogs(Array.isArray(meals) ? meals.slice(0, 3) : []);
+          // Cargar perfil del usuario si no vino en los params
+          if (!routeUser) {
+            const profileRes = await fetch(`${API_BASE_URL}/api/v1/auth/me`, {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            if (profileRes.ok) setUser(await profileRes.json());
+          }
+          // Cargar meal logs
+          const mealsRes = await fetch(`${API_BASE_URL}/api/v1/ai/my-meals`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (mealsRes.ok) {
+            const meals = await mealsRes.json();
+            setMealLogs(Array.isArray(meals) ? meals.slice(0, 3) : []);
+          }
         }
       } catch (e) {
         console.warn('Error cargando datos del dashboard:', e.message);
