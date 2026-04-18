@@ -126,58 +126,46 @@ const RegisterScreen = ({ navigation, route }) => {
     setLoading(true);
     
     try {
-      let response;
       const registerData = {
         email: form.email,
         full_name: form.full_name,
         password: form.password,
+        role: profileType, // 'client' | 'coach' | 'nutritionist'
       };
       
       // Agregar campos según el tipo de usuario
       if (profileType === 'client') {
-        registerData.dietary_preferences = form.dietary_preferences ? form.dietary_preferences.split(',').map(s => s.trim()).filter(Boolean) : [];
-        registerData.allergies = form.allergies ? form.allergies.split(',').map(s => s.trim()).filter(Boolean) : [];
-        registerData.health_goals = form.health_goals ? form.health_goals.split(',').map(s => s.trim()).filter(Boolean) : [];
-        response = await api.registerClient(registerData);
-      } else if (profileType === 'coach') {
-        registerData.license_number = form.license_number;
-        registerData.specialization = form.specialization;
-        registerData.years_experience = parseInt(form.years_experience) || 0;
-        registerData.certifications = [];
-        registerData.bio = '';
-        registerData.phone = '';
-        response = await api.registerCoach(registerData);
-      } else if (profileType === 'nutritionist') {
-        registerData.license_number = form.license_number;
-        registerData.specialization = form.specialization;
-        registerData.years_experience = parseInt(form.years_experience) || 0;
-        registerData.certifications = [];
-        registerData.bio = '';
-        registerData.phone = '';
-        response = await api.registerNutritionist(registerData);
+        registerData.dietary_preferences = form.dietary_preferences
+          ? form.dietary_preferences.split(',').map(s => s.trim()).filter(Boolean) : [];
+        registerData.allergies = form.allergies
+          ? form.allergies.split(',').map(s => s.trim()).filter(Boolean) : [];
+        registerData.health_goals = form.health_goals
+          ? form.health_goals.split(',').map(s => s.trim()).filter(Boolean) : [];
+      } else {
+        registerData.license_number    = form.license_number;
+        registerData.specialization    = form.specialization;
+        registerData.years_experience  = parseInt(form.years_experience) || 0;
       }
-      
-      // Mostrar alerta de éxito
+
+      const response = await api.registerClient(registerData); // registerClient apunta a /auth/register
+
+      // Navegar al Dashboard pasando el token
       Alert.alert(
-        '✅ ¡Registro Exitoso!',
-        response.message || 'Tu cuenta ha sido creada exitosamente.',
+        '✅ ¡Bienvenido/a!',
+        response.message || 'Tu cuenta fue creada exitosamente.',
         [
           {
-            text: 'OK',
+            text: 'Comenzar',
             onPress: () => {
-              // Guardar token y navegar
-              console.log('Token:', response.access_token);
-              console.log('User:', response.user);
-              navigation.navigate('Login');
+              navigation.navigate('Dashboard', { token: response.access_token });
             },
           },
         ]
       );
     } catch (err) {
-      // Mostrar alerta de error
       Alert.alert(
         '❌ Error en el Registro',
-        err.message || 'No se pudo completar el registro. Por favor intenta de nuevo.',
+        err.message || 'No se pudo completar el registro. Intenta de nuevo.',
         [{ text: 'OK' }]
       );
       setErrors({ api: err.message || 'Error al registrar. Intenta de nuevo.' });
