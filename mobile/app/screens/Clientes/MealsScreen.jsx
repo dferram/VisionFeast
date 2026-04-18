@@ -208,7 +208,7 @@ export default function MealsScreen({ navigation, route }) {
           <Text style={styles.heroTitle}>Analiza tu Plato</Text>
           <Text style={styles.heroSubtitle}>Usa la cámara para obtener un análisis nutricional instantáneo con IA.</Text>
           <View style={styles.heroButtonsRow}>
-            <TouchableOpacity style={styles.btnScan} onPress={handlePickImage} disabled={loading}>
+            <TouchableOpacity style={styles.btnScan} onPress={pickImage} disabled={loading}>
               <Ionicons name="camera" size={20} color="#65A30D" />
               <Text style={styles.btnScanText}>Escanear</Text>
             </TouchableOpacity>
