@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,8 +9,10 @@ import {
   Platform,
   ScrollView,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { api } from '../services/api';
 
 // ── Ícono ojo (SVG-less, usando texto unicode) ──────────────────────────────
 const EyeIcon = ({ visible }) => (
@@ -66,16 +68,28 @@ const FormField = ({
 );
 
 // ── Pantalla principal ───────────────────────────────────────────────────────
-const RegisterScreen = ({ navigation }) => {
+const RegisterScreen = ({ navigation, route }) => {
+  const profileType = route?.params?.profileType || 'client';
+  
   const [form, setForm] = useState({
-    nombreCompleto: '',
+    full_name: '',
     email: '',
-    cedulaProfesional: '',
     password: '',
+    confirmPassword: '',
+    // Campos para profesionales
+    license_number: '',
+    specialization: '',
+    years_experience: '',
+    // Campos para clientes
+    dietary_preferences: '',
+    allergies: '',
+    health_goals: '',
   });
   const [errors, setErrors]           = useState({});
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading]         = useState(false);
+  
+  const isProfessional = profileType === 'coach' || profileType === 'nutritionist';
 
   // ── Helpers ─────────────────────────────────────────────────────────────
   const setField = (key) => (val) => {
@@ -85,9 +99,18 @@ const RegisterScreen = ({ navigation }) => {
 
   function validate() {
     const e = {};
-    if (!form.nombreCompleto.trim())      e.nombreCompleto    = 'El nombre es obligatorio.';
+    if (!form.full_name.trim())           e.full_name         = 'El nombre es obligatorio.';
     if (!form.email.includes('@'))        e.email             = 'Ingresa un correo válido.';
     if (form.password.length < 8)         e.password          = 'Mínimo 8 caracteres.';
+    if (form.password !== form.confirmPassword) e.confirmPassword = 'Las contraseñas no coinciden.';
+    
+    // Validaciones para profesionales
+    if (isProfessional) {
+      if (!form.license_number.trim())    e.license_number    = 'La cédula es obligatoria.';
+      if (!form.specialization.trim())    e.specialization    = 'La especialización es obligatoria.';
+      if (!form.years_experience || form.years_experience < 0) e.years_experience = 'Ingresa años de experiencia válidos.';
+    }
+    
     setErrors(e);
     return Object.keys(e).length === 0;
   }
@@ -101,12 +124,63 @@ const RegisterScreen = ({ navigation }) => {
   const handleContinue = async () => {
     if (!validate()) return;
     setLoading(true);
+    
     try {
-      // TODO: llamar a la API de registro
-      console.log('Register:', form);
-      // navigation.navigate('Onboarding');
+      let response;
+      const registerData = {
+        email: form.email,
+        full_name: form.full_name,
+        password: form.password,
+      };
+      
+      // Agregar campos según el tipo de usuario
+      if (profileType === 'client') {
+        registerData.dietary_preferences = form.dietary_preferences ? form.dietary_preferences.split(',').map(s => s.trim()).filter(Boolean) : [];
+        registerData.allergies = form.allergies ? form.allergies.split(',').map(s => s.trim()).filter(Boolean) : [];
+        registerData.health_goals = form.health_goals ? form.health_goals.split(',').map(s => s.trim()).filter(Boolean) : [];
+        response = await api.registerClient(registerData);
+      } else if (profileType === 'coach') {
+        registerData.license_number = form.license_number;
+        registerData.specialization = form.specialization;
+        registerData.years_experience = parseInt(form.years_experience) || 0;
+        registerData.certifications = [];
+        registerData.bio = '';
+        registerData.phone = '';
+        response = await api.registerCoach(registerData);
+      } else if (profileType === 'nutritionist') {
+        registerData.license_number = form.license_number;
+        registerData.specialization = form.specialization;
+        registerData.years_experience = parseInt(form.years_experience) || 0;
+        registerData.certifications = [];
+        registerData.bio = '';
+        registerData.phone = '';
+        response = await api.registerNutritionist(registerData);
+      }
+      
+      // Mostrar alerta de éxito
+      Alert.alert(
+        '✅ ¡Registro Exitoso!',
+        response.message || 'Tu cuenta ha sido creada exitosamente.',
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              // Guardar token y navegar
+              console.log('Token:', response.access_token);
+              console.log('User:', response.user);
+              navigation.navigate('Login');
+            },
+          },
+        ]
+      );
     } catch (err) {
-      setErrors({ api: 'Error al registrar. Intenta de nuevo.' });
+      // Mostrar alerta de error
+      Alert.alert(
+        '❌ Error en el Registro',
+        err.message || 'No se pudo completar el registro. Por favor intenta de nuevo.',
+        [{ text: 'OK' }]
+      );
+      setErrors({ api: err.message || 'Error al registrar. Intenta de nuevo.' });
     } finally {
       setLoading(false);
     }
@@ -159,10 +233,10 @@ const RegisterScreen = ({ navigation }) => {
             <FormField
               label="NOMBRE COMPLETO"
               placeholder="Ej. Alex Rivera"
-              value={form.nombreCompleto}
-              onChangeText={setField('nombreCompleto')}
+              value={form.full_name}
+              onChangeText={setField('full_name')}
               autoCapitalize="words"
-              error={errors.nombreCompleto}
+              error={errors.full_name}
             />
 
             <FormField
@@ -175,14 +249,36 @@ const RegisterScreen = ({ navigation }) => {
               error={errors.email}
             />
 
-            <FormField
-              label="CÉDULA PROFESIONAL"
-              placeholder="Ej. Alex Rivera"
-              value={form.cedulaProfesional}
-              onChangeText={setField('cedulaProfesional')}
-              autoCapitalize="characters"
-              error={errors.cedulaProfesional}
-            />
+            {isProfessional && (
+              <>
+                <FormField
+                  label="CÉDULA PROFESIONAL"
+                  placeholder="Ej. PROF-12345"
+                  value={form.license_number}
+                  onChangeText={setField('license_number')}
+                  autoCapitalize="characters"
+                  error={errors.license_number}
+                />
+
+                <FormField
+                  label="ESPECIALIZACIÓN"
+                  placeholder="Ej. Nutrición deportiva"
+                  value={form.specialization}
+                  onChangeText={setField('specialization')}
+                  autoCapitalize="words"
+                  error={errors.specialization}
+                />
+
+                <FormField
+                  label="AÑOS DE EXPERIENCIA"
+                  placeholder="Ej. 5"
+                  value={form.years_experience}
+                  onChangeText={setField('years_experience')}
+                  keyboardType="numeric"
+                  error={errors.years_experience}
+                />
+              </>
+            )}
 
             <FormField
               label="CONTRASEÑA"
@@ -200,6 +296,16 @@ const RegisterScreen = ({ navigation }) => {
                   <EyeIcon visible={showPassword} />
                 </TouchableOpacity>
               }
+            />
+
+            <FormField
+              label="CONFIRMAR CONTRASEÑA"
+              placeholder="Repite tu contraseña"
+              value={form.confirmPassword}
+              onChangeText={setField('confirmPassword')}
+              autoCapitalize="none"
+              secureTextEntry={!showPassword}
+              error={errors.confirmPassword}
             />
           </View>
 

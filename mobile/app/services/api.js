@@ -39,6 +39,54 @@ export const api = {
     const response = await fetch(`${API_BASE_URL}/api/v1/test/ping`);
     return response.json();
   },
+
+  /**
+   * Registra un nuevo cliente
+   */
+  registerClient: async (data) => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/register/client`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Error en el registro');
+    }
+    return response.json();
+  },
+
+  /**
+   * Registra un nuevo entrenador
+   */
+  registerCoach: async (data) => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/register/coach`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Error en el registro');
+    }
+    return response.json();
+  },
+
+  /**
+   * Registra un nuevo nutriólogo
+   */
+  registerNutritionist: async (data) => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/register/nutritionist`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Error en el registro');
+    }
+    return response.json();
+  },
 };
 
 export default API_BASE_URL;
