@@ -12,7 +12,7 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { api } from '../services/api';
+import API_BASE_URL from '../services/api';
 
 // ── Ícono ojo (SVG-less, usando texto unicode) ──────────────────────────────
 const EyeIcon = ({ visible }) => (
@@ -70,7 +70,7 @@ const FormField = ({
 // ── Pantalla principal ───────────────────────────────────────────────────────
 const RegisterScreen = ({ navigation, route }) => {
   const profileType = route?.params?.profileType || 'client';
-  
+
   const [form, setForm] = useState({
     full_name: '',
     email: '',
@@ -85,10 +85,10 @@ const RegisterScreen = ({ navigation, route }) => {
     allergies: '',
     health_goals: '',
   });
-  const [errors, setErrors]           = useState({});
+  const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading]         = useState(false);
-  
+  const [loading, setLoading] = useState(false);
+
   const isProfessional = profileType === 'coach' || profileType === 'nutritionist';
 
   // ── Helpers ─────────────────────────────────────────────────────────────
@@ -99,18 +99,18 @@ const RegisterScreen = ({ navigation, route }) => {
 
   function validate() {
     const e = {};
-    if (!form.full_name.trim())           e.full_name         = 'El nombre es obligatorio.';
-    if (!form.email.includes('@'))        e.email             = 'Ingresa un correo válido.';
-    if (form.password.length < 8)         e.password          = 'Mínimo 8 caracteres.';
+    if (!form.full_name.trim()) e.full_name = 'El nombre es obligatorio.';
+    if (!form.email.includes('@')) e.email = 'Ingresa un correo válido.';
+    if (form.password.length < 8) e.password = 'Mínimo 8 caracteres.';
     if (form.password !== form.confirmPassword) e.confirmPassword = 'Las contraseñas no coinciden.';
-    
+
     // Validaciones para profesionales
     if (isProfessional) {
-      if (!form.license_number.trim())    e.license_number    = 'La cédula es obligatoria.';
-      if (!form.specialization.trim())    e.specialization    = 'La especialización es obligatoria.';
+      if (!form.license_number.trim()) e.license_number = 'La cédula es obligatoria.';
+      if (!form.specialization.trim()) e.specialization = 'La especialización es obligatoria.';
       if (!form.years_experience || form.years_experience < 0) e.years_experience = 'Ingresa años de experiencia válidos.';
     }
-    
+
     setErrors(e);
     return Object.keys(e).length === 0;
   }
@@ -124,51 +124,49 @@ const RegisterScreen = ({ navigation, route }) => {
   const handleContinue = async () => {
     if (!validate()) return;
     setLoading(true);
-    
+
     try {
-      let response;
       const registerData = {
         email: form.email,
         full_name: form.full_name,
         password: form.password,
+        role: profileType, // 'client' | 'coach' | 'nutritionist'
       };
-      
+
       // Agregar campos según el tipo de usuario
       if (profileType === 'client') {
-        registerData.dietary_preferences = form.dietary_preferences ? form.dietary_preferences.split(',').map(s => s.trim()).filter(Boolean) : [];
-        registerData.allergies = form.allergies ? form.allergies.split(',').map(s => s.trim()).filter(Boolean) : [];
-        registerData.health_goals = form.health_goals ? form.health_goals.split(',').map(s => s.trim()).filter(Boolean) : [];
-        response = await api.registerClient(registerData);
-      } else if (profileType === 'coach') {
+        registerData.dietary_preferences = form.dietary_preferences
+          ? form.dietary_preferences.split(',').map(s => s.trim()).filter(Boolean) : [];
+        registerData.allergies = form.allergies
+          ? form.allergies.split(',').map(s => s.trim()).filter(Boolean) : [];
+        registerData.health_goals = form.health_goals
+          ? form.health_goals.split(',').map(s => s.trim()).filter(Boolean) : [];
+      } else {
         registerData.license_number = form.license_number;
         registerData.specialization = form.specialization;
         registerData.years_experience = parseInt(form.years_experience) || 0;
-        registerData.certifications = [];
-        registerData.bio = '';
-        registerData.phone = '';
-        response = await api.registerCoach(registerData);
-      } else if (profileType === 'nutritionist') {
-        registerData.license_number = form.license_number;
-        registerData.specialization = form.specialization;
-        registerData.years_experience = parseInt(form.years_experience) || 0;
-        registerData.certifications = [];
-        registerData.bio = '';
-        registerData.phone = '';
-        response = await api.registerNutritionist(registerData);
       }
-      
-      // Mostrar alerta de éxito
+
+      const res = await fetch(`${API_BASE_URL}/api/v1/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(registerData),
+      });
+      const response = await res.json();
+      if (!res.ok) throw new Error(response.detail || 'Error en el registro');
+
+      // Navegar al Dashboard pasando el token
       Alert.alert(
-        '✅ ¡Registro Exitoso!',
-        response.message || 'Tu cuenta ha sido creada exitosamente.',
+        '✅ ¡Bienvenido/a!',
+        response.message || 'Tu cuenta fue creada exitosamente.',
         [
           {
-            text: 'OK',
+            text: 'Comenzar',
             onPress: () => {
               // Guardar token
               console.log('Token:', response.access_token);
               console.log('User:', response.user);
-              
+
               // Navegar según el tipo de usuario
               if (profileType === 'client') {
                 // Para clientes, ir al dashboard
@@ -185,10 +183,9 @@ const RegisterScreen = ({ navigation, route }) => {
         ]
       );
     } catch (err) {
-      // Mostrar alerta de error
       Alert.alert(
         '❌ Error en el Registro',
-        err.message || 'No se pudo completar el registro. Por favor intenta de nuevo.',
+        err.message || 'No se pudo completar el registro. Intenta de nuevo.',
         [{ text: 'OK' }]
       );
       setErrors({ api: err.message || 'Error al registrar. Intenta de nuevo.' });
@@ -349,13 +346,13 @@ const RegisterScreen = ({ navigation, route }) => {
 
 // ── Estilos ──────────────────────────────────────────────────────────────────
 const BRAND_GREEN = '#A8E63D';
-const GRAY_BG     = '#F2F3F5';
-const INPUT_BG    = '#F5F5F7';
-const BORDER      = '#E5E7EB';
+const GRAY_BG = '#F2F3F5';
+const INPUT_BG = '#F5F5F7';
+const BORDER = '#E5E7EB';
 const LABEL_COLOR = '#9CA3AF';
-const TEXT_DARK   = '#111827';
-const TEXT_MID    = '#6B7280';
-const WHITE       = '#FFFFFF';
+const TEXT_DARK = '#111827';
+const TEXT_MID = '#6B7280';
+const WHITE = '#FFFFFF';
 
 const styles = StyleSheet.create({
   safeArea: {

@@ -5,12 +5,14 @@ from passlib.context import CryptContext
 from datetime import datetime, timedelta
 from jose import jwt
 
-from app.schemas.auth_schema import GoogleAuthRequest, TokenResponse, UserResponse, UserUpdate
+from app.schemas.auth_schema import (
+    GoogleAuthRequest, TokenResponse, UserResponse, UserUpdate,
+    RegisterRequest, RegisterResponse
+)
 from app.schemas.login_schemas import LoginRequest, LoginResponse
 from app.services.auth_service import AuthService
 from app.core.security import get_current_active_user
-from app.models.user_model import User
-from app.models.professional_model import ProfessionalProfile
+from app.models.user_model import User, AuthProvider
 from app.core.config import settings
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -29,7 +31,74 @@ def create_access_token(data: dict) -> str:
     encoded_jwt = jwt.encode(to_encode, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
     return encoded_jwt
 
+@router.post("/register", response_model=RegisterResponse, status_code=201)
+async def register(request: RegisterRequest):
+    """
+    Registra un nuevo usuario (cliente, nutriólogo o entrenador).
+    - **email**: Correo electrónico único
+    - **full_name**: Nombre completo
+    - **password**: Contraseña (mínimo 8 caracteres)
+    - **role**: Rol del usuario: `client`, `nutritionist` o `coach`
+    """
+    # Verificar si el email ya existe
+    existing = await User.find_one(User.email == request.email)
+    if existing:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Ya existe una cuenta con este correo electrónico"
+        )
+
+    # Hashear la contraseña
+    hashed_pw = pwd_context.hash(request.password)
+
+    # Mapear rol del frontend al modelo
+    role_map = {
+        "client": "client",
+        "usuario": "client",
+        "nutritionist": "nutritionist",
+        "nutriologo": "nutritionist",
+        "coach": "coach",
+        "entrenador": "coach",
+    }
+    role = role_map.get(request.role.lower(), "client")
+
+    # Crear usuario con los campos correctos según el rol
+    user = User(
+        email=request.email,
+        full_name=request.full_name,
+        hashed_password=hashed_pw,
+        role=role,
+        auth_provider=AuthProvider.EMAIL,
+        is_active=True,
+        # Campos de cliente
+        dietary_preferences=request.dietary_preferences or [],
+        allergies=request.allergies or [],
+        health_goals=request.health_goals or [],
+        # Campos de profesional
+        license_number=request.license_number,
+        specialization=request.specialization,
+        years_experience=request.years_experience,
+    )
+    await user.insert()
+
+    # Generar token
+    access_token = create_access_token(data={"sub": user.email, "role": user.role})
+
+    return RegisterResponse(
+        message=f"✅ Cuenta creada exitosamente para {user.full_name}",
+        access_token=access_token,
+        user=UserResponse(
+            id=str(user.id),
+            email=user.email,
+            full_name=user.full_name,
+            picture=user.picture,
+            role=user.role,
+            is_active=user.is_active,
+        )
+    )
+
 @router.post("/login", response_model=LoginResponse)
+
 async def login(request: LoginRequest):
     """
     Login with email and password. Works for all user types (client, coach, nutritionist).

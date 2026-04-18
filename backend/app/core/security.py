@@ -42,11 +42,12 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
     if payload is None:
         raise credentials_exception
 
-    user_id: str = payload.get("sub")
-    if user_id is None:
+    user_email: str = payload.get("sub")
+    if user_email is None:
         raise credentials_exception
 
-    user = await User.get(user_id)
+    # Buscar por email
+    user = await User.find_one(User.email == user_email)
     if user is None:
         raise credentials_exception
 

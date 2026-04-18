@@ -9,15 +9,35 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Image,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function RegisterStep1Screen({ navigation }) {
   const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
+  const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+
+  const handleContinue = () => {
+    if (!fullName.trim() || !email.trim() || !password.trim()) {
+      Alert.alert('Campos incompletos', 'Por favor completa todos los campos.');
+      return;
+    }
+    if (!email.includes('@')) {
+      Alert.alert('Correo inválido', 'Ingresa un correo electrónico válido.');
+      return;
+    }
+    if (password.length < 8) {
+      Alert.alert('Contraseña corta', 'La contraseña debe tener al menos 8 caracteres.');
+      return;
+    }
+    // Navegar a RegisterScreen pasando los datos precargados y el tipo de perfil
+    navigation.navigate('Register', {
+      profileType: 'client',
+      prefill: { full_name: fullName, email, password },
+    });
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -30,10 +50,8 @@ export default function RegisterStep1Screen({ navigation }) {
           <TouchableOpacity onPress={() => navigation?.goBack()} style={styles.iconButton}>
             <Ionicons name="arrow-back" size={24} color="#374151" />
           </TouchableOpacity>
-          <Text style={styles.stepText}>Paso 1 de 5</Text>
-          <TouchableOpacity style={styles.iconButton}>
-            <Ionicons name="help-circle-outline" size={24} color="#374151" />
-          </TouchableOpacity>
+          <Text style={styles.stepText}>Paso 1 de 2</Text>
+          <View style={styles.iconButton} />
         </View>
 
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -42,22 +60,6 @@ export default function RegisterStep1Screen({ navigation }) {
           <Text style={styles.subtitle}>
             Crea tu cuenta para personalizar tu experiencia de bienestar.
           </Text>
-
-          {/* Google Button */}
-          <TouchableOpacity style={styles.googleButton}>
-            <Image 
-              source={{ uri: 'https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg' }}
-              style={styles.googleIcon}
-            />
-            <Text style={styles.googleButtonText}>Registrarse con Google</Text>
-          </TouchableOpacity>
-
-          {/* Divider */}
-          <View style={styles.dividerContainer}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>O USA TU EMAIL</Text>
-            <View style={styles.dividerLine} />
-          </View>
 
           {/* Form */}
           <View style={styles.formGroup}>
@@ -68,6 +70,7 @@ export default function RegisterStep1Screen({ navigation }) {
               placeholderTextColor="#9CA3AF"
               value={fullName}
               onChangeText={setFullName}
+              autoCapitalize="words"
             />
           </View>
 
@@ -111,7 +114,7 @@ export default function RegisterStep1Screen({ navigation }) {
 
         {/* Footer */}
         <View style={styles.footer}>
-          <TouchableOpacity style={styles.continueButton}>
+          <TouchableOpacity style={styles.continueButton} onPress={handleContinue}>
             <Text style={styles.continueButtonText}>CONTINUE</Text>
           </TouchableOpacity>
         </View>
