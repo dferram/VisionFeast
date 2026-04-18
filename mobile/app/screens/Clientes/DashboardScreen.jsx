@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,10 +8,53 @@ import {
   Image,
   TouchableOpacity,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { api } from '../../services/api';
 
-export default function DashboardScreen() {
+export default function DashboardScreen({ route }) {
+  // El token viene por parámetro de navegación tras el login
+  const token = route?.params?.token || null;
+
+  const [user, setUser] = useState(null);
+  const [mealLogs, setMealLogs] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        if (token) {
+          const [profile, meals] = await Promise.all([
+            api.getMe(token),
+            api.getMealLogs(token).catch(() => []),
+          ]);
+          setUser(profile);
+          setMealLogs(Array.isArray(meals) ? meals.slice(0, 3) : []);
+        }
+      } catch (e) {
+        console.warn('Error cargando datos del dashboard:', e.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadData();
+  }, [token]);
+
+  const displayName = user?.full_name?.split(' ')[0]?.toUpperCase() || 'USUARIO';
+
+  // Calcula calorías totales del día de los meal_logs
+  const totalKcalHoy = mealLogs.reduce((sum, m) => sum + (m?.analisis_ia?.kcal || 0), 0);
+  const metaKcal = 2100; // TODO: leer de user.objetivos.kcal_diarias cuando esté disponible
+  const kcalLeft = Math.max(0, metaKcal - totalKcalHoy);
+
+  if (loading) {
+    return (
+      <SafeAreaView style={[styles.safeArea, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color="#8DC63F" />
+      </SafeAreaView>
+    );
+  }
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -24,7 +67,7 @@ export default function DashboardScreen() {
               style={styles.avatar} 
             />
             <View>
-              <Text style={styles.greetingText}>HELLO, SARAH</Text>
+              <Text style={styles.greetingText}>HELLO, {displayName}</Text>
               <Text style={styles.logoText}>
                 <Text style={styles.logoTextBlack}>VISION </Text>
                 <Text style={styles.logoTextGreen}>FEAST</Text>
@@ -44,8 +87,8 @@ export default function DashboardScreen() {
             <View style={styles.ringBackground}>
               <View style={styles.ringInner}>
                 <Text style={styles.caloriesLabel}>CALORIES LEFT</Text>
-                <Text style={styles.caloriesValue}>1,240</Text>
-                <Text style={styles.caloriesTotal}>of 2,100 kcal</Text>
+                <Text style={styles.caloriesValue}>{kcalLeft.toLocaleString()}</Text>
+                <Text style={styles.caloriesTotal}>of {metaKcal.toLocaleString()} kcal</Text>
               </View>
             </View>
           </View>
@@ -119,37 +162,32 @@ export default function DashboardScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Meal 1 */}
-        <View style={styles.mealCard}>
-          <Image 
-            source={{ uri: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&q=80' }} 
-            style={styles.mealImage} 
-          />
-          <View style={styles.mealInfo}>
-            <Text style={styles.mealTitle}>Salmon Power Bowl</Text>
-            <Text style={styles.mealTime}>LUNCH • 12:45 PM</Text>
-          </View>
-          <View style={styles.mealCalories}>
-            <Text style={styles.mealCaloriesValue}>540</Text>
-            <Text style={styles.mealCaloriesLabel}>KCAL</Text>
-          </View>
-        </View>
-
-        {/* Meal 2 */}
-        <View style={styles.mealCard}>
-          <Image 
-            source={{ uri: 'https://images.unsplash.com/photo-1517673132405-a56a62b18caf?w=400&q=80' }} 
-            style={styles.mealImage} 
-          />
-          <View style={styles.mealInfo}>
-            <Text style={styles.mealTitle}>Blueberry Almond Oats</Text>
-            <Text style={styles.mealTime}>BREAKFAST • 08:30 AM</Text>
-          </View>
-          <View style={styles.mealCalories}>
-            <Text style={styles.mealCaloriesValue}>320</Text>
-            <Text style={styles.mealCaloriesLabel}>KCAL</Text>
-          </View>
-        </View>
+        {/* Comidas reales del backend (meal_logs) */}
+        {mealLogs.length === 0 ? (
+          <Text style={{ color: '#64748B', textAlign: 'center', paddingVertical: 20 }}>
+            Aún no tienes comidas registradas hoy
+          </Text>
+        ) : (
+          mealLogs.map((meal, idx) => (
+            <View key={meal._id || idx} style={styles.mealCard}>
+              {meal.comida?.foto_url ? (
+                <Image source={{ uri: meal.comida.foto_url }} style={styles.mealImage} />
+              ) : (
+                <View style={[styles.mealImage, { backgroundColor: '#E5E7EB', justifyContent: 'center', alignItems: 'center' }]}>
+                  <Ionicons name="restaurant-outline" size={24} color="#9CA3AF" />
+                </View>
+              )}
+              <View style={styles.mealInfo}>
+                <Text style={styles.mealTitle}>{meal.comida?.nombre || 'Comida sin nombre'}</Text>
+                <Text style={styles.mealTime}>{meal.comida?.momento?.toUpperCase() || 'COMIDA'}</Text>
+              </View>
+              <View style={styles.mealCalories}>
+                <Text style={styles.mealCaloriesValue}>{meal.analisis_ia?.kcal || '—'}</Text>
+                <Text style={styles.mealCaloriesLabel}>KCAL</Text>
+              </View>
+            </View>
+          ))
+        )}
         
       </ScrollView>
 

@@ -9,8 +9,11 @@ import {
   TextInput,
   TouchableOpacity,
   Platform,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { api } from '../../services/api';
 
 // ── Constantes de diseño (mismo sistema que DashboardScreen) ──────────────────
 const GREEN        = '#8DC63F';
@@ -85,24 +88,55 @@ function NavItem({ icon, label, active, onPress }) {
 }
 
 // ── Pantalla principal ────────────────────────────────────────────────────────
-export default function LunchReviewScreen({ navigation }) {
+export default function LunchReviewScreen({ navigation, route }) {
+  const token  = route?.params?.token  || null;
+  const mealId = route?.params?.mealId || null;
+  const meal   = route?.params?.meal   || null; // Objeto meal_log completo
+
   const [feedback, setFeedback] = useState('');
   const [activeNav, setActiveNav] = useState('patients');
+  const [loadingAction, setLoadingAction] = useState(false);
 
-  const handleApprove = () => {
-    // TODO: enviar aprobación al backend
-    console.log('Aprobado', { feedback });
+  const handleApprove = async () => {
+    if (!feedback.trim()) {
+      Alert.alert('Feedback requerido', 'Por favor escribe un comentario antes de aprobar.');
+      return;
+    }
+    setLoadingAction(true);
+    try {
+      await api.approveMealLog(token, mealId || meal?._id, feedback);
+      Alert.alert('✅ Aprobado', 'El análisis fue aprobado y el paciente recibirá el feedback.', [
+        { text: 'OK', onPress: () => navigation?.goBack() },
+      ]);
+    } catch (e) {
+      Alert.alert('Error', e.message || 'No se pudo aprobar el análisis.');
+    } finally {
+      setLoadingAction(false);
+    }
+  };
+
+  const handleFlagCorrection = async () => {
+    setLoadingAction(true);
+    try {
+      await api.flagMealLog(token, mealId || meal?._id, feedback || 'Requiere revisión');
+      Alert.alert('🚩 Marcado', 'El análisis fue marcado para corrección.', [
+        { text: 'OK', onPress: () => navigation?.goBack() },
+      ]);
+    } catch (e) {
+      Alert.alert('Error', e.message || 'No se pudo marcar el análisis.');
+    } finally {
+      setLoadingAction(false);
+    }
   };
 
   const handleEditLogic = () => {
-    // TODO: abrir modal de edición
-    console.log('Editar lógica');
+    Alert.alert('Editar lógica', 'Esta función estará disponible próximamente.');
   };
 
-  const handleFlagCorrection = () => {
-    // TODO: enviar flag de corrección
-    console.log('Flag correction');
-  };
+  // Datos del meal_log (real o fallback)
+  const analisis  = meal?.analisis_ia  || { kcal: 542, macros: { p: 38, c: 42, g: 26 }, confidence_score: 0.94 };
+  const comida    = meal?.comida       || { nombre: 'Salmon Bowl', foto_url: null, momento: 'comida' };
+  const confidence = Math.round((analisis.confidence_score || 0.94) * 100);
 
   return (
     <SafeAreaView style={styles.safeArea}>
