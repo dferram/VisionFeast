@@ -9,16 +9,35 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
+import { api } from '../services/api';
 
 const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = () => {
-    console.log('Login:', { email, password, rememberMe });
-    // Aquí irá la lógica de autenticación
+  const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert('Error', 'Por favor ingresa tu correo y contraseña.');
+      return;
+    }
+    setLoading(true);
+    try {
+      // Verifica que el backend esté disponible
+      const ping = await api.ping();
+      console.log('Backend respondio:', ping);
+      // Navegar a la pantalla principal
+      navigation.navigate('Welcome');
+    } catch (error) {
+      Alert.alert('Error de conexión', 'No se pudo conectar al servidor. Verifica que el backend esté corriendo.');
+      console.error('Error login:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -101,11 +120,15 @@ const LoginScreen = ({ navigation }) => {
 
           {/* Submit Button */}
           <TouchableOpacity
-            style={styles.button}
+            style={[styles.button, loading && styles.buttonDisabled]}
             onPress={handleLogin}
             activeOpacity={0.8}
+            disabled={loading}
           >
-            <Text style={styles.buttonText}>Iniciar sesión</Text>
+            {loading
+              ? <ActivityIndicator color="#ffffff" />
+              : <Text style={styles.buttonText}>Iniciar sesión</Text>
+            }
           </TouchableOpacity>
 
           {/* Sign Up Link */}
@@ -265,6 +288,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#87b128',
+  },
+  buttonDisabled: {
+    opacity: 0.6,
   },
 });
 
