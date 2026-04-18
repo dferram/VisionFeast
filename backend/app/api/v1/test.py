@@ -145,3 +145,18 @@ async def test_database_connection():
                 "connected": False
             }
         )
+
+from fastapi import Response
+from app.services.voice_gateway import generate_speech
+
+@router.get("/test-voice")
+def test_voice_generation(text: str = "¡Hola! Esta es una prueba de voz de tu coach nutricional en VisionFeast."):
+    """
+    Test ElevenLabs voice generation.
+    Returns an audio file.
+    """
+    try:
+        audio_bytes = generate_speech(text)
+        return Response(content=audio_bytes, media_type="audio/mpeg")
+    except Exception as e:
+        return {"error": str(e)}
