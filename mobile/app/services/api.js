@@ -47,6 +47,21 @@ export const api = {
 
   getMealLogs: (token) => authRequest('/api/v1/ai/my-meals', token),
 
+  // ── Recetas Inteligentes ─────────────────────────────────────────────────
+  createRecipe: (token, data) =>
+    authRequest('/api/v1/ai/create-recipe', token, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  // ── Planes Dinámicos ──────────────────────────────────────────────────────
+  generatePlan: (token, data) =>
+    authRequest('/api/v1/ai/generate-plan', token, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  // ── Acciones del Nutriólogo (CONTEXT.md: plans.estado) ───────────────────
   approveMealLog: (token, mealId, feedback) =>
     authRequest(`/api/v1/ai/meals/${mealId}/approve`, token, {
       method: 'POST',

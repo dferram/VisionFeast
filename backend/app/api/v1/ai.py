@@ -160,6 +160,17 @@ async def create_intelligent_recipe(
             medical_context=medical_context
         )
         
+        # Generar audio de las instrucciones con ElevenLabs
+        try:
+            instructions_text = f"{recipe['titulo']}. {recipe['descripcion']}. "
+            instructions_text += "Instrucciones: " + ". ".join(recipe['instrucciones'])
+            
+            audio_base64 = await elevenlabs_service.text_to_speech_base64(instructions_text)
+            recipe["audio_base64"] = audio_base64
+        except Exception as e:
+            print(f"Error generando audio de receta: {e}")
+            recipe["audio_base64"] = None
+        
         return RecipeResponse(**recipe)
         
     except Exception as e:
@@ -195,11 +206,23 @@ async def generate_dynamic_plan(
             duration_days=request.duration_days
         )
         
+        # Generar audio del resumen del plan con ElevenLabs
+        try:
+            plan_summary = f"{plan.get('titulo', '')}. {plan.get('descripcion', '')}. "
+            if plan.get('consejos'):
+                plan_summary += "Consejos principales: " + ". ".join(plan.get('consejos', [])[:3])
+            
+            audio_base64 = await elevenlabs_service.text_to_speech_base64(plan_summary)
+        except Exception as e:
+            print(f"Error generando audio de plan: {e}")
+            audio_base64 = None
+        
         return PlanResponse(
             titulo=plan.get("titulo", ""),
             descripcion=plan.get("descripcion", ""),
             contenido=plan,
-            consejos=plan.get("consejos", [])
+            consejos=plan.get("consejos", []),
+            audio_base64=audio_base64
         )
         
     except Exception as e:
