@@ -141,6 +141,7 @@ export default function RegisterStep5Screen({ navigation, route }) {
                   full_name: route.params?.full_name,
                   email: route.params?.email,
                   password: route.params?.password,
+                  role: 'client', // Importante para el backend
                   dietary_preferences: [diet],
                   allergies: route.params?.allergies ? route.params.allergies.split(', ') : [],
                   health_goals: route.params?.health_goals || [],
@@ -153,7 +154,7 @@ export default function RegisterStep5Screen({ navigation, route }) {
                 if (!finalData.password) throw new Error("Falta la CONTRASEÑA. Por favor regresa al Paso 1.");
                 if (!finalData.full_name) throw new Error("Falta el NOMBRE. Por favor regresa al Paso 1.");
 
-                const data = await api.registerClient(finalData);
+                const data = await api.register(finalData);
 
                 Alert.alert("¡Bienvenid@!", "Tu cuenta ha sido creada con éxito.", [
                   { 

@@ -12,7 +12,7 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import API_BASE_URL from '../services/api';
+import api from '../services/api';
 
 // ── Ícono ojo (SVG-less, usando texto unicode) ──────────────────────────────
 const EyeIcon = ({ visible }) => (
@@ -144,21 +144,15 @@ const RegisterScreen = ({ navigation, route }) => {
         registerData.health_goals = form.health_goals
           ? form.health_goals.split(',').map(s => s.trim()).filter(Boolean) : [];
       } else {
+        // Campos estrictos para profesionales según RegisterRequest en auth_schema.py
         registerData.license_number = form.license_number;
         registerData.specialization = form.specialization;
         registerData.years_experience = parseInt(form.years_experience) || 0;
-        registerData.certifications = form.certifications
-          ? form.certifications.split(',').map(s => s.trim()).filter(Boolean) : [];
-        registerData.bio = form.bio;
+        // Nota: El esquema actual del backend no tiene certifications/bio en RegisterRequest
+        // Si los necesitas, debemos agregarlos al esquema del backend primero.
       }
 
-      const res = await fetch(`${API_BASE_URL}/api/v1/auth/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(registerData),
-      });
-      const response = await res.json();
-      if (!res.ok) throw new Error(response.detail || 'Error en el registro');
+      const response = await api.register(registerData);
 
       // Navegar al Dashboard pasando el token
       Alert.alert(

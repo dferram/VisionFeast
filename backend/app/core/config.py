@@ -1,4 +1,4 @@
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import Optional
 
 class Settings(BaseSettings):
@@ -16,9 +16,13 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7
     
     FRONTEND_URL: str = "http://localhost:5173"
+    ENVIRONMENT: str = "development" # Añadido para evitar el error de validación
     
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
+    # Usar model_config para Pydantic V2
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        case_sensitive=True,
+        extra="ignore" # Esto evita que el servidor explote por variables extra en el .env
+    )
 
 settings = Settings()

@@ -1,17 +1,5 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  SafeAreaView,
-  ScrollView,
-  Image,
-  TextInput,
-  TouchableOpacity,
-  Platform,
-  Alert,
-  ActivityIndicator,
-} from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, ScrollView, Image, TextInput, TouchableOpacity, Platform, Alert } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { api } from '../../services/api';
 
@@ -41,26 +29,13 @@ function DetectedChip({ label }) {
   );
 }
 
-function MacroChip({ label, value, unit = 'G' }) {
+function MacroChip({ label, value }) {
   return (
     <View style={styles.macroChip}>
       <Text style={styles.macroChipLabel}>{label}</Text>
       <Text style={styles.macroChipValue}>{value}</Text>
-      <Text style={styles.macroChipUnit}>{unit}</Text>
+      <Text style={styles.macroChipUnit}>G</Text>
     </View>
-  );
-}
-
-function NavItem({ icon, label, active, onPress }) {
-  return (
-    <TouchableOpacity
-      style={[styles.navItem, active && styles.navItemActive]}
-      onPress={onPress}
-      activeOpacity={0.7}
-    >
-      <Ionicons name={icon} size={22} color={active ? '#8DC63F' : '#64748B'} />
-      <Text style={[styles.navLabel, active && styles.navLabelActive]}>{label}</Text>
-    </TouchableOpacity>
   );
 }
 
@@ -68,103 +43,68 @@ export default function LunchReviewScreen({ navigation, route }) {
   const token = route?.params?.token || null;
   const meal = route?.params?.meal || null;
   const [feedback, setFeedback] = useState('');
-  const [loadingAction, setLoadingAction] = useState(false);
 
   const handleApprove = async () => {
-    if (!feedback.trim()) {
-      Alert.alert('Feedback requerido', 'Por favor escribe un comentario.');
-      return;
-    }
-    setLoadingAction(true);
+    if (!feedback.trim()) { Alert.alert('Error', 'Escribe un comentario.'); return; }
     try {
       await api.approveMealLog(token, meal?._id, feedback);
-      Alert.alert('✅ Aprobado', 'Feedback enviado.', [{ text: 'OK', onPress: () => navigation.goBack() }]);
-    } catch (e) {
-      Alert.alert('Error', e.message);
-    } finally {
-      setLoadingAction(false);
-    }
+      Alert.alert('OK', 'Feedback enviado.', [{ text: 'OK', onPress: () => navigation.goBack() }]);
+    } catch (e) { Alert.alert('Error', e.message); }
   };
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-            <Ionicons name="arrow-back" size={22} color="#1E293B" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>
-            <Text style={{ color: '#1E293B' }}>Vision </Text>
-            <Text style={{ color: '#8DC63F' }}>Feast</Text>
-          </Text>
-          <View style={styles.avatar} />
-        </View>
-
-        <Text style={styles.pageTitle}>Lunch Review</Text>
-
-        <TouchableOpacity 
-          style={styles.metaRow}
-          onPress={() => navigation.navigate('PatientProfile', { token })}
-        >
-          <View style={styles.metaItem}>
-            <Ionicons name="person-outline" size={13} color="#64748B" />
-            <Text style={styles.metaText}>Paciente: Guadalupe Bazaldua</Text>
+          <View style={styles.headerBrand}>
+            <View style={styles.logoCircle}>
+              <MaterialCommunityIcons name="food-apple" size={24} color="#8DC63F" />
+            </View>
+            <View>
+              <Text style={styles.headerTitle}>
+                <Text style={styles.headerTitleBlack}>Vision </Text>
+                <Text style={styles.headerTitleGreen}>Feast</Text>
+              </Text>
+              <Text style={styles.headerSubtitle}>Nutriólogo</Text>
+            </View>
           </View>
+          <TouchableOpacity 
+            style={styles.logoutBtn} 
+            onPress={() => {
+              Alert.alert('Cerrar Sesión', '¿Estás seguro de que quieres salir?', [
+                { text: 'Cancelar', style: 'cancel' },
+                { text: 'Salir', style: 'destructive', onPress: () => navigation.navigate('Welcome') }
+              ]);
+            }}
+          >
+            <Ionicons name="exit-outline" size={22} color="#FF3B30" />
+          </TouchableOpacity>
+        </View>
+        <Text style={styles.pageTitle}>Lunch Review</Text>
+        <TouchableOpacity style={styles.metaRow} onPress={() => navigation.navigate('PatientProfile', { token })}>
+          <View style={styles.metaItem}><Ionicons name="person-outline" size={13} color="#64748B" /><Text style={styles.metaText}>Paciente: Guadalupe Bazaldua</Text></View>
           <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
         </TouchableOpacity>
-
-        <View style={styles.mealImageWrap}>
-          <Image
-            source={{ uri: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800&q=80' }}
-            style={styles.mealImage}
-          />
-        </View>
-
+        <View style={styles.mealImageWrap}><Image source={{ uri: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800&q=80' }} style={styles.mealImage} /></View>
         <ConfidenceBar value={94} />
         <DetectedChip label="Salmon Bowl" />
-
         <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <MaterialCommunityIcons name="leaf" size={14} color="#8DC63F" />
-            <Text style={styles.cardTitle}>Nutritional Extraction</Text>
-          </View>
-
-          <View style={styles.caloriesRow}>
-            <Text style={styles.caloriesLabel}>CALORIES (KCAL)</Text>
-            <Text style={styles.caloriesValue}>542</Text>
-          </View>
-
-          <View style={styles.macrosRow}>
-            <MacroChip label="PROTEIN" value={38} />
-            <MacroChip label="CARBS" value={42} />
-            <MacroChip label="FATS" value={26} />
-          </View>
-
+          <View style={styles.cardHeader}><MaterialCommunityIcons name="leaf" size={14} color="#8DC63F" /><Text style={styles.cardTitle}>Nutritional Extraction</Text></View>
+          <View style={styles.caloriesRow}><Text style={styles.caloriesLabel}>CALORIES (KCAL)</Text><Text style={styles.caloriesValue}>542</Text></View>
+          <View style={styles.macrosRow}><MacroChip label="PROTEIN" value={38} /><MacroChip label="CARBS" value={42} /><MacroChip label="FATS" value={26} /></View>
           <View style={styles.divider} />
           <Text style={styles.feedbackLabel}>CLINICIAN FEEDBACK</Text>
-          <TextInput
-            style={styles.feedbackInput}
-            placeholder="Add feedback..."
-            value={feedback}
-            onChangeText={setFeedback}
-            multiline
-          />
-
+          <TextInput style={styles.feedbackInput} placeholder="Add feedback..." value={feedback} onChangeText={setFeedback} multiline />
           <View style={styles.actionRow}>
-            <TouchableOpacity style={styles.editBtn}>
-              <Text style={styles.editBtnText}>Edit Logic</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.approveBtn} onPress={handleApprove}>
-              <Text style={styles.approveBtnText}>Approve</Text>
-            </TouchableOpacity>
+            <TouchableOpacity style={styles.editBtn}><Text style={styles.editBtnText}>Edit Logic</Text></TouchableOpacity>
+            <TouchableOpacity style={styles.approveBtn} onPress={handleApprove}><Text style={styles.approveBtnText}>Approve</Text></TouchableOpacity>
           </View>
         </View>
       </ScrollView>
-
       <View style={styles.bottomNav}>
-        <NavItem icon="grid-outline" label="DASHBOARD" active={true} />
-        <NavItem icon="restaurant-outline" label="DIETS" onPress={() => navigation.navigate('DietGenerator')} />
-        <NavItem icon="person-circle-outline" label="PROFILE" onPress={() => navigation.navigate('NutriProfile')} />
+        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('DashboardNutri')}><Ionicons name="grid" size={20} color="#8DC63F" /><Text style={[styles.navLabel, {color:'#8DC63F'}]}>DASHBOARD</Text></TouchableOpacity>
+        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('DietGenerator')}><Ionicons name="restaurant-outline" size={20} color="#64748B" /><Text style={styles.navLabel}>DIETS</Text></TouchableOpacity>
+        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('NutriProfile')}><Ionicons name="person-circle-outline" size={20} color="#64748B" /><Text style={styles.navLabel}>PROFILE</Text></TouchableOpacity>
       </View>
     </SafeAreaView>
   );
@@ -173,8 +113,44 @@ export default function LunchReviewScreen({ navigation, route }) {
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#FAFAFA' },
   scroll: { paddingHorizontal: 20, paddingBottom: 110 },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginVertical: 16 },
-  headerTitle: { fontSize: 18, fontWeight: '800' },
+  header: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    justifyContent: 'space-between', 
+    paddingTop: 40,
+    paddingBottom: 16 
+  },
+  headerBrand: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  logoCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#F0FDF4',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+  },
+  headerTitleBlack: { color: '#000000' },
+  headerTitleGreen: { color: '#8DC63F' },
+  headerSubtitle: {
+    fontSize: 12,
+    color: '#64748B',
+  },
+  logoutBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FFF1F0',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   pageTitle: { fontSize: 28, fontWeight: '800', color: '#1E293B', marginBottom: 12 },
   metaRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#FFF', padding: 12, borderRadius: 12, marginBottom: 16 },
   metaItem: { flexDirection: 'row', alignItems: 'center', gap: 8 },
@@ -212,6 +188,5 @@ const styles = StyleSheet.create({
   bottomNav: { position: 'absolute', bottom: 20, left: 20, right: 20, backgroundColor: '#FFF', flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 12, borderRadius: 30, elevation: 8 },
   navItem: { alignItems: 'center' },
   navLabel: { fontSize: 9, color: '#64748B', marginTop: 4 },
-  navLabelActive: { color: '#8DC63F', fontWeight: '700' },
   avatar: { width: 38, height: 38, borderRadius: 19, backgroundColor: '#E5E7EB' }
 });

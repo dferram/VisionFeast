@@ -85,8 +85,8 @@ export default function ProfileSelectionScreen({ navigation }) {
             Gestiona a tus clientes, crea rutinas de alto impacto y analiza el progreso físico con herramientas de precisión.
           </Text>
           
-          <View style={[styles.button, { backgroundColor: '#E5E7EB' }]}>
-            <Text style={[styles.buttonText, { color: '#1565C0' }]}>Elegir Perfil ›</Text>
+          <View style={[styles.button, { backgroundColor: '#1565C0' }]}>
+            <Text style={[styles.buttonText, { color: '#FFF' }]}>Elegir Perfil ›</Text>
           </View>
         </TouchableOpacity>
 
@@ -107,8 +107,8 @@ export default function ProfileSelectionScreen({ navigation }) {
             Diseña planes alimenticios basados en ciencia, monitorea biomarcadores y optimiza la nutrición de tus pacientes.
           </Text>
           
-          <View style={[styles.button, { backgroundColor: '#E5E7EB' }]}>
-            <Text style={[styles.buttonText, { color: '#00897B' }]}>Elegir Perfil ›</Text>
+          <View style={[styles.button, { backgroundColor: '#00897B' }]}>
+            <Text style={[styles.buttonText, { color: '#FFF' }]}>Elegir Perfil ›</Text>
           </View>
         </TouchableOpacity>
 
