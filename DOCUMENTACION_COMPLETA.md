@@ -1,4 +1,4 @@
-# 🍽️ VisionFeast - Documentación Técnica Completa
+# VisionFeast - Documentación Técnica Completa
 
 <div align="center">
 
@@ -17,68 +17,68 @@
 
 ---
 
-## 📑 Tabla de Contenidos
+## Tabla de Contenidos
 
-1. [Descripción General](#-descripción-general)
-2. [Tech Stack Completo](#-tech-stack-completo)
-3. [Arquitectura del Sistema](#-arquitectura-del-sistema)
-4. [Base de Datos MongoDB](#-base-de-datos-mongodb)
-5. [Backend API](#-backend-api)
-6. [Frontend Móvil](#-frontend-móvil)
-7. [Funcionalidades de IA](#-funcionalidades-de-ia)
-8. [Sistema de Roles](#-sistema-de-roles)
-9. [Seguridad y Autenticación](#-seguridad-y-autenticación)
-10. [Testing](#-testing)
-11. [Deployment](#-deployment)
-12. [Instalación y Configuración](#-instalación-y-configuración)
+1. [Descripción General](#descripción-general)
+2. [Tech Stack Completo](#tech-stack-completo)
+3. [Arquitectura del Sistema](#arquitectura-del-sistema)
+4. [Base de Datos MongoDB](#base-de-datos-mongodb)
+5. [Backend API](#backend-api)
+6. [Frontend Móvil](#frontend-móvil)
+7. [Funcionalidades de IA](#funcionalidades-de-ia)
+8. [Sistema de Roles](#sistema-de-roles)
+9. [Seguridad y Autenticación](#seguridad-y-autenticación)
+10. [Testing](#testing)
+11. [Deployment](#deployment)
+12. [Instalación y Configuración](#instalación-y-configuración)
 
 ---
 
-## 📖 Descripción General
+## Descripción General
 
-**VisionFeast** es una aplicación móvil revolucionaria que combina inteligencia artificial con nutrición personalizada para transformar la manera en que las personas gestionan su salud y bienestar. Utilizando **Google Gemini AI** y visión por computadora, VisionFeast permite a los usuarios analizar sus alimentos mediante fotografías, recibir coaching nutricional personalizado, generar recetas inteligentes y crear planes dinámicos de nutrición y entrenamiento.
+VisionFeast es una aplicación móvil que integra inteligencia artificial con nutrición personalizada para la gestión de salud y bienestar. Mediante Google Gemini AI y técnicas de visión por computadora, la plataforma permite el análisis automatizado de alimentos a través de fotografías, proporciona coaching nutricional personalizado, genera recetas adaptadas y crea planes dinámicos de nutrición y entrenamiento.
 
-### 🎯 Problema que Resuelve
+### Problemática Abordada
 
-Las aplicaciones de nutrición actuales tienen limitaciones significativas:
-- ❌ Registro manual tedioso de alimentos
-- ❌ Bases de datos limitadas que no incluyen comidas locales
-- ❌ Falta de personalización real basada en patrones individuales
-- ❌ Planes genéricos que no se adaptan al progreso del usuario
-- ❌ Desconexión entre nutrición y entrenamiento
-- ❌ Falta de validación profesional
+Las aplicaciones de nutrición actuales presentan limitaciones significativas:
+- Registro manual tedioso de alimentos
+- Bases de datos limitadas que no incluyen comidas locales
+- Falta de personalización basada en patrones individuales
+- Planes genéricos que no se adaptan al progreso del usuario
+- Desconexión entre nutrición y entrenamiento
+- Ausencia de validación profesional
 
-### ✨ Nuestra Solución
+### Solución Propuesta
 
-VisionFeast aborda estos problemas con:
-- ✅ **Análisis visual automático** de alimentos con IA
-- ✅ **Reconocimiento universal** de comidas (incluso platillos locales)
-- ✅ **Coaching personalizado** que aprende de tus patrones
-- ✅ **Planes dinámicos** que se adaptan a tu progreso
-- ✅ **Integración nutrición-ejercicio** en una sola plataforma
-- ✅ **Validación profesional** por nutriólogos certificados
+VisionFeast aborda estas limitaciones mediante:
+- Análisis visual automático de alimentos utilizando IA
+- Reconocimiento universal de comidas, incluyendo platillos locales
+- Sistema de coaching personalizado basado en patrones de comportamiento
+- Planes dinámicos que se adaptan al progreso del usuario
+- Integración de nutrición y ejercicio en una plataforma unificada
+- Validación profesional por nutriólogos certificados
 
-### 🌟 Características Principales
+### Características Principales
 
-#### 📸 Análisis Visual de Alimentos
+#### Análisis Visual de Alimentos
 - Toma una foto de tu comida y obtén análisis nutricional instantáneo
 - Detección automática de ingredientes y porciones
 - Cálculo preciso de calorías y macronutrientes (proteínas, carbohidratos, grasas)
 - Funciona con cualquier tipo de comida, incluyendo platillos locales
 
-#### 🎯 Coaching Personalizado con IA
+#### Coaching Personalizado con IA
 - Insights personalizados basados en tus objetivos de salud
 - Recomendaciones adaptadas a tus patrones alimentarios
 - Detección de tendencias y sugerencias de mejora
 - Alertas inteligentes sobre deficiencias nutricionales
 
-#### 🍳 Generación de Recetas Inteligentes
+#### Generación de Recetas Inteligentes
 - Crea recetas basadas en ingredientes disponibles
 - Adaptadas a tus objetivos nutricionales y restricciones
 - Instrucciones paso a paso con información nutricional completa
 - Recetas públicas compartidas por la comunidad
 
-#### 📊 Planes Dinámicos
+#### Planes Dinámicos
 - **Planes de Nutrición**: Menús semanales personalizados
 - **Planes de Entrenamiento**: Rutinas adaptadas a tu nivel
 - Ajuste automático basado en tu progreso
@@ -86,7 +86,7 @@ VisionFeast aborda estos problemas con:
 
 ---
 
-## 🛠️ Tech Stack Completo
+## Stack Tecnológico
 
 ### **Backend**
 
@@ -167,7 +167,7 @@ VisionFeast aborda estos problemas con:
 
 ---
 
-## 🏗️ Arquitectura del Sistema
+## Arquitectura del Sistema
 
 ### Arquitectura General
 
@@ -230,7 +230,7 @@ VisionFeast aborda estos problemas con:
 ```
 backend/
 ├── app/
-│   ├── api/                    # 📡 API Layer - Endpoints REST
+│   ├── api/                    # API Layer - Endpoints REST
 │   │   └── v1/
 │   │       ├── auth.py         # Autenticación (Google OAuth, JWT)
 │   │       ├── ai.py           # IA (análisis, recetas, planes)
@@ -241,13 +241,13 @@ backend/
 │   │       ├── register.py     # Registro de usuarios
 │   │       └── test.py         # Endpoints de prueba
 │   │
-│   ├── services/               # 🧠 Services Layer - Lógica de negocio
+│   ├── services/               # Services Layer - Lógica de negocio
 │   │   └── gemini_service.py  # Servicio de Google Gemini AI
 │   │
-│   ├── repositories/           # 💾 Repositories Layer - Acceso a datos
+│   ├── repositories/           # Repositories Layer - Acceso a datos
 │   │   └── (capa de persistencia)
 │   │
-│   ├── models/                 # 📊 Models Layer - Esquemas MongoDB
+│   ├── models/                 # Models Layer - Esquemas MongoDB
 │   │   ├── user_model.py       # Modelo de usuarios
 │   │   ├── meal_log_model.py   # Modelo de registros de comidas
 │   │   ├── recipe_model.py     # Modelo de recetas
@@ -255,23 +255,23 @@ backend/
 │   │   ├── professional_model.py # Modelo de profesionales
 │   │   └── request_model.py    # Modelo de solicitudes
 │   │
-│   ├── schemas/                # ✅ Schemas - Validación Pydantic
+│   ├── schemas/                # Schemas - Validación Pydantic
 │   │   ├── auth_schema.py      # Schemas de autenticación
 │   │   └── ai_schema.py        # Schemas de IA
 │   │
-│   ├── core/                   # ⚙️ Core - Configuración
+│   ├── core/                   # Core - Configuración
 │   │   ├── config.py           # Variables de entorno
 │   │   └── security.py         # JWT y seguridad
 │   │
-│   └── database.py             # 🔌 Conexión a MongoDB
+│   └── database.py             # Conexión a MongoDB
 │
-├── tests/                      # 🧪 Testing
+├── tests/                      # Testing
 │   ├── test_main.py
 │   ├── test_auth_endpoints.py
 │   ├── test_ai_endpoints.py
 │   └── conftest.py
 │
-└── main.py                     # 🚀 Punto de entrada
+└── main.py                     # Punto de entrada
 ```
 
 ### Estructura Frontend Móvil
@@ -279,32 +279,32 @@ backend/
 ```
 mobile/
 ├── app/
-│   ├── screens/                # 📱 Pantallas
+│   ├── screens/                # Pantallas
 │   │   ├── SplashScreen.jsx    # Pantalla de inicio
 │   │   ├── WelcomeScreen.jsx   # Pantalla de bienvenida
 │   │   ├── LoginScreen.jsx     # Pantalla de login
 │   │   └── Clientes/
 │   │       └── MealsScreen.jsx # Pantalla de comidas
 │   │
-│   ├── components/             # 🧩 Componentes reutilizables
+│   ├── components/             # Componentes reutilizables
 │   │   └── AudioPlayer.jsx     # Reproductor de audio
 │   │
-│   └── services/               # 🔌 Servicios API
+│   └── services/               # Servicios API
 │       └── api.js              # Cliente HTTP
 │
-├── assets/                     # 🎨 Recursos estáticos
+├── assets/                     # Recursos estáticos
 │   ├── Logo.png
 │   └── gemini_logo.png
 │
-├── App.js                      # 🚀 Punto de entrada
-├── app.json                    # ⚙️ Configuración Expo
-├── package.json                # 📦 Dependencias
-└── babel.config.js             # 🔧 Configuración Babel
+├── App.js                      # Punto de entrada
+├── app.json                    # Configuración Expo
+├── package.json                # Dependencias
+└── babel.config.js             # Configuración Babel
 ```
 
 ---
 
-## 💾 Base de Datos MongoDB
+## Base de Datos MongoDB
 
 ### Nombre de la Base de Datos
 `visionfeast_db`
@@ -554,7 +554,7 @@ plans
 
 ---
 
-## 🔌 Backend API
+## Backend API
 
 ### Endpoints Principales
 
@@ -632,7 +632,7 @@ plans
 
 ---
 
-## 📱 Frontend Móvil
+## Frontend Móvil
 
 ### Pantallas Implementadas
 
@@ -690,7 +690,7 @@ Stack Navigator:
 
 ---
 
-## 🤖 Funcionalidades de IA
+## Funcionalidades de IA
 
 ### 1. Análisis de Visión Nutricional
 
@@ -798,21 +798,23 @@ Stack Navigator:
 
 ---
 
-## 👥 Sistema de Roles
+## Sistema de Roles
 
 ### Roles Disponibles
 
 #### 1. **Usuario** (Cliente)
 
 **Permisos:**
-- ✅ Analizar comidas con IA
-- ✅ Ver historial de comidas
-- ✅ Generar recetas personalizadas
-- ✅ Solicitar planes de nutrición/entrenamiento
-- ✅ Ver recetas públicas del marketplace
-- ✅ Solicitar asignación de nutriólogo/entrenador
-- ❌ Validar planes
-- ❌ Ver datos de otros usuarios
+- Analizar comidas con IA
+- Ver historial de comidas
+- Generar recetas personalizadas
+- Solicitar planes de nutrición/entrenamiento
+- Ver recetas públicas del marketplace
+- Solicitar asignación de nutriólogo/entrenador
+
+**Restricciones:**
+- No puede validar planes
+- No puede ver datos de otros usuarios
 
 **Flujo típico:**
 1. Registro/Login
@@ -825,13 +827,15 @@ Stack Navigator:
 #### 2. **Nutriólogo**
 
 **Permisos:**
-- ✅ Todo lo del usuario
-- ✅ Validar planes de nutrición
-- ✅ Crear planes profesionales
-- ✅ Ver pacientes asignados
-- ✅ Ajustar planes según contexto médico
-- ✅ Crear recetas profesionales
-- ❌ Validar planes de entrenamiento
+- Todos los permisos de usuario
+- Validar planes de nutrición
+- Crear planes profesionales
+- Ver pacientes asignados
+- Ajustar planes según contexto médico
+- Crear recetas profesionales
+
+**Restricciones:**
+- No puede validar planes de entrenamiento
 
 **Flujo típico:**
 1. Recibir solicitud de paciente
@@ -843,12 +847,14 @@ Stack Navigator:
 #### 3. **Entrenador**
 
 **Permisos:**
-- ✅ Todo lo del usuario
-- ✅ Validar planes de entrenamiento
-- ✅ Crear rutinas profesionales
-- ✅ Ver pacientes asignados
-- ✅ Ajustar ejercicios según lesiones
-- ❌ Validar planes de nutrición
+- Todos los permisos de usuario
+- Validar planes de entrenamiento
+- Crear rutinas profesionales
+- Ver pacientes asignados
+- Ajustar ejercicios según lesiones
+
+**Restricciones:**
+- No puede validar planes de nutrición
 
 **Flujo típico:**
 1. Recibir solicitud de paciente
@@ -868,7 +874,7 @@ Stack Navigator:
 
 ---
 
-## 🔒 Seguridad y Autenticación
+## Seguridad y Autenticación
 
 ### Autenticación
 
