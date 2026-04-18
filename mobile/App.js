@@ -4,6 +4,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import SplashScreen from './app/screens/SplashScreen';
 import WelcomeScreen from './app/screens/WelcomeScreen';
 import LoginScreen from './app/screens/LoginScreen';
+import ProfileSelectionScreen from './app/screens/ProfileSelectionScreen';
 import RegisterScreen from './app/screens/RegisterScreen';
 
 const Stack = createNativeStackNavigator();
@@ -18,10 +19,11 @@ export default function App() {
           animation: 'fade',
         }}
       >
-        <Stack.Screen name="Splash"    component={SplashScreen}    />
-        <Stack.Screen name="Welcome"   component={WelcomeScreen}   />
-        <Stack.Screen name="Login"     component={LoginScreen}     />
-        <Stack.Screen name="Register"  component={RegisterScreen}  />
+        <Stack.Screen name="Splash"           component={SplashScreen}           />
+        <Stack.Screen name="Welcome"          component={WelcomeScreen}          />
+        <Stack.Screen name="Login"            component={LoginScreen}            />
+        <Stack.Screen name="ProfileSelection" component={ProfileSelectionScreen} />
+        <Stack.Screen name="Register"         component={RegisterScreen}         />
       </Stack.Navigator>
     </NavigationContainer>
   );
