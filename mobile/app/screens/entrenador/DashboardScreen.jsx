@@ -129,7 +129,7 @@ const DashboardScreen = ({ navigation }) => {
           <Text style={styles.sectionHeading}>Acciones Rápidas</Text>
           <View style={styles.actionsRow}>
             {/* Nuevo Cliente */}
-            <TouchableOpacity style={styles.btnPrimary} activeOpacity={0.8}>
+            <TouchableOpacity style={styles.btnPrimary} activeOpacity={0.8} onPress={() => navigation.navigate('NuevoCliente')}>
               <Image source={{ uri: imgNewClient }} style={styles.btnIcon} resizeMode="contain" />
               <View>
                 <Text style={styles.btnTextGreen}>Nuevo</Text>
