@@ -21,7 +21,18 @@ async def connect_to_mongo():
     """Establece la conexión con MongoDB y inicializa Beanie"""
     try:
         logger.info("🔄 Conectando a MongoDB...")
-        db.client = AsyncIOMotorClient(settings.MONGODB_URI)
+        
+        # Configuración SSL para MongoDB Atlas
+        import ssl
+        ssl_context = ssl.create_default_context()
+        ssl_context.check_hostname = False
+        ssl_context.verify_mode = ssl.CERT_NONE
+        
+        db.client = AsyncIOMotorClient(
+            settings.MONGODB_URI,
+            tlsCAFile=None,
+            ssl_cert_reqs=ssl.CERT_NONE
+        )
         
         # Verificar conexión
         await db.client.admin.command('ping')
