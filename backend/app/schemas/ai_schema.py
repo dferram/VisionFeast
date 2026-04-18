@@ -11,6 +11,14 @@ class FoodAnalysisRequest(BaseModel):
     image_base64: str
     momento: str
 
+class ManualMealRequest(BaseModel):
+    nombre: str
+    kcal: float
+    p: float
+    c: float
+    g: float
+    momento: str = "comida"
+
 class FoodAnalysisResponse(BaseModel):
     nombre: str
     kcal: float

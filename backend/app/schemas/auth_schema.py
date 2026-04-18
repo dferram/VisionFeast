@@ -23,9 +23,15 @@ class UserResponse(BaseModel):
 
 class UserUpdate(BaseModel):
     full_name: Optional[str] = None
+    picture: Optional[str] = None
     dietary_preferences: Optional[List[str]] = None
     allergies: Optional[List[str]] = None
     health_goals: Optional[List[str]] = None
+    bio: Optional[str] = None
+    years_experience: Optional[int] = None
+    specialization: Optional[str] = None
+    certifications: Optional[List[str]] = None
+    kcal_diarias: Optional[float] = None
 
 # ── Registro de usuarios ───────────────────────────────────────────────────────
 class RegisterRequest(BaseModel):

@@ -190,7 +190,7 @@ async def get_current_user_info(current_user: User = Depends(get_current_active_
         is_active=current_user.is_active
     )
 
-@router.patch("/me", response_model=UserResponse)
+@router.patch("/me", response_model=dict)
 async def update_current_user(
     user_update: UserUpdate,
     current_user: User = Depends(get_current_active_user)
@@ -202,11 +202,31 @@ async def update_current_user(
     
     await current_user.save()
     
-    return UserResponse(
-        id=str(current_user.id),
-        email=current_user.email,
-        full_name=current_user.full_name,
-        picture=current_user.picture,
-        role=current_user.role,
-        is_active=current_user.is_active
-    )
+    # Return full user data including professional fields
+    user_data = {
+        "id": str(current_user.id),
+        "email": current_user.email,
+        "full_name": current_user.full_name,
+        "role": current_user.role,
+        "picture": current_user.picture,
+        "is_active": current_user.is_active,
+        "bio": current_user.bio,
+        "years_experience": current_user.years_experience,
+        "specialization": current_user.specialization,
+        "certifications": current_user.certifications,
+        "dietary_preferences": current_user.dietary_preferences,
+        "allergies": current_user.allergies,
+        "health_goals": current_user.health_goals,
+        "kcal_diarias": current_user.kcal_diarias
+    }
+    
+    return {"message": "Perfil actualizado", "user": user_data}
+
+
+@router.put("/update-profile", response_model=dict)
+async def update_profile_alias(
+    user_update: UserUpdate,
+    current_user: User = Depends(get_current_active_user)
+):
+    """Alias para update profile si se usa PUT /update-profile"""
+    return await update_current_user(user_update, current_user)

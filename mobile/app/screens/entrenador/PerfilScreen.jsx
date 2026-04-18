@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,42 +7,75 @@ import {
   ScrollView,
   StyleSheet,
   SafeAreaView,
+  Platform,
+  Alert,
+  TextInput,
+  Modal,
+  ActivityIndicator
 } from 'react-native';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import api from '../../services/api';
 
-// ─── Assets (Figma MCP local server) ─────────────────────────────────────────
-const imgLogo         = 'http://localhost:3845/assets/2837c796e096ae9ffe18f492d83d6e6f9ae5d369.png';
-const imgProfile      = 'http://localhost:3845/assets/2b5377df868f542108e14ac60c63b5bfdbe68250.png';
-const imgClose        = 'http://localhost:3845/assets/b0473fe862d396b569492f643970c466ef3127e5.svg';
-const imgIconPin      = 'http://localhost:3845/assets/71c7d900e76dfc008b7048b51798e8e941e43868.svg';
-const imgIconEdit     = 'http://localhost:3845/assets/5a115df2fceb28f8c9158a29c1e7a34ba59d8af2.svg';
-const imgIconMedal    = 'http://localhost:3845/assets/983800ade5f3c61c3039ffd4653b521ec6adb280.svg';
-const imgIconCert1    = 'http://localhost:3845/assets/732b152762cc736180bfbb763401f9cc6127f143.svg';
-const imgIconCert2    = 'http://localhost:3845/assets/c63c75da2dcfe7987a094241577f281d65b0bf0f.svg';
-const imgIconCert3    = 'http://localhost:3845/assets/f99026408d97793fbfa66af6910ac34d5f088aff.svg';
+const PerfilScreen = ({ navigation, route }) => {
+  const [user, setUser] = useState(route?.params?.user);
+  const token = route?.params?.token;
+  const [loading, setLoading] = useState(false);
+  const [editModalVisible, setEditModalVisible] = useState(false);
 
-const imgNavDashboard = 'http://localhost:3845/assets/a0eed74339d05ceecc6247ad05ebd1dc2b3c43f2.svg';
-const imgNavClients   = 'http://localhost:3845/assets/5353fb4883fbecd2f891fb855e67f9df3e1884a4.svg';
-const imgNavRoutines  = 'http://localhost:3845/assets/6add253f9310064e5b8a70b6b94899437d9f2fff.svg';
-const imgNavProfile   = 'http://localhost:3845/assets/58d99e15c99a117871469f71363969ad071c0384.svg';
+  // Form states
+  const [fullName, setFullName] = useState(user?.full_name || '');
+  const [bio, setBio] = useState(user?.bio || '');
+  const [specialization, setSpecialization] = useState(user?.specialization || '');
+  const [yearsExp, setYearsExp] = useState(String(user?.years_experience || '0'));
 
-// ─── Component ────────────────────────────────────────────────────────────────
-const PerfilScreen = ({ navigation }) => {
+  const handleLogout = () => {
+    Alert.alert('Cerrar Sesión', '¿Estás seguro?', [
+      { text: 'No', style: 'cancel' },
+      { text: 'Sí', style: 'destructive', onPress: () => navigation.navigate('Welcome') }
+    ]);
+  };
+
+  const handleSaveProfile = async () => {
+    setLoading(true);
+    try {
+      const res = await api.updateProfile(token, {
+        full_name: fullName,
+        bio: bio,
+        specialization: specialization,
+        years_experience: parseInt(yearsExp) || 0
+      });
+      
+      if (res && res.user) {
+        setUser(res.user);
+        setEditModalVisible(false);
+        Alert.alert("Éxito", "Perfil actualizado correctamente");
+      }
+    } catch (error) {
+      Alert.alert("Error", error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.root}>
       {/* ── Header ── */}
       <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <Image source={{ uri: imgLogo }} style={styles.logo} resizeMode="contain" />
+        <TouchableOpacity style={styles.headerLeft} onPress={() => navigation.goBack()}>
+          <Ionicons name="chevron-back" size={24} color="#000" />
           <View>
             <Text style={styles.brandText}>
               <Text style={styles.brandVision}>Vision </Text>
               <Text style={styles.brandFeast}>Feast</Text>
             </Text>
-            <Text style={styles.trainerLabel}>Nombre entrenador</Text>
+            <Text style={styles.trainerLabel}>PERFIL ENTRENADOR</Text>
           </View>
-        </View>
-        <TouchableOpacity style={styles.closeBtn} onPress={() => navigation?.goBack()}>
-          <Image source={{ uri: imgClose }} style={styles.closeIcon} />
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={styles.closeBtn} 
+          onPress={() => navigation.navigate('DashboardCoach', { user, token })}
+        >
+          <Ionicons name="close" size={24} color="#000" />
         </TouchableOpacity>
       </View>
 
@@ -53,43 +86,48 @@ const PerfilScreen = ({ navigation }) => {
       >
         {/* Profile Image */}
         <View style={styles.imageContainer}>
-          <Image source={{ uri: imgProfile }} style={styles.profileImg} resizeMode="cover" />
+          <Image 
+            source={{ uri: user?.picture || 'https://images.unsplash.com/photo-1594381898411-846e7d193883?w=800&q=80' }} 
+            style={styles.profileImg} 
+            resizeMode="cover" 
+          />
         </View>
 
         {/* Info Header */}
         <View style={styles.infoSection}>
           <View style={styles.locationRow}>
-            <Image source={{ uri: imgIconPin }} style={styles.pinIcon} />
-            <Text style={styles.locationText}>SAN FRANCISCO, CA</Text>
+            <Ionicons name="location" size={14} color="#64748b" />
+            <Text style={styles.locationText}>MÉXICO, CDMX</Text>
           </View>
-          <Text style={styles.name}>Alex Rivers</Text>
-          <Text style={styles.role}>Elite Performance Coach</Text>
+          <Text style={styles.name}>{user?.full_name}</Text>
+          <Text style={styles.role}>{user?.specialization || 'Performance & Strength Coach'}</Text>
         </View>
 
         {/* Actions */}
         <View style={styles.actionRow}>
-          <TouchableOpacity style={styles.editBtn} activeOpacity={0.8}>
-            <Image source={{ uri: imgIconEdit }} style={styles.editIcon} />
+          <TouchableOpacity style={styles.editBtn} activeOpacity={0.8} onPress={() => setEditModalVisible(true)}>
+            <Ionicons name="pencil" size={18} color="#000" />
             <Text style={styles.editBtnText}>Editar Perfil</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.shareBtn} activeOpacity={0.8}>
-            <Text style={styles.shareBtnText}>Compartir</Text>
+          <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
+            <Ionicons name="log-out-outline" size={18} color="#EF4444" />
+            <Text style={styles.logoutBtnText}>Salir</Text>
           </TouchableOpacity>
         </View>
 
         {/* Stats Bento */}
         <View style={styles.statsGrid}>
           <View style={styles.statCard}>
-            <Text style={styles.statNumber}>12+</Text>
+            <Text style={styles.statNumber}>{user?.years_experience || 0}+</Text>
             <Text style={styles.statLabel}>AÑOS EXP.</Text>
           </View>
           <View style={styles.statCard}>
-            <Text style={styles.statNumber}>84</Text>
-            <Text style={styles.statLabel}>CLIENTES</Text>
+            <Text style={styles.statNumber}>12</Text>
+            <Text style={styles.statLabel}>ATLETAS</Text>
           </View>
           <View style={styles.statCard}>
-            <Text style={styles.statNumber}>15</Text>
-            <Text style={styles.statLabel}>PROGRAMAS</Text>
+            <Text style={styles.statNumber}>4.9</Text>
+            <Text style={styles.statLabel}>RATING</Text>
           </View>
         </View>
 
@@ -97,373 +135,155 @@ const PerfilScreen = ({ navigation }) => {
         <View style={styles.section}>
           <Text style={styles.sectionHeading}>Sobre mí</Text>
           <Text style={styles.aboutText}>
-            Como entrenador de alto rendimiento con más de una década de experiencia, me especializo en transformar no solo cuerpos, sino también mentalidades. Mi enfoque combina la ciencia del entrenamiento de fuerza con estrategias de nutrición personalizadas para lograr resultados sostenibles y de élite. He trabajado con atletas profesionales y ejecutivos ocupados para optimizar su vitalidad diaria.
+            {user?.bio || 'Especialista en alto rendimiento. Actualiza tu biografía para que los atletas te conozcan mejor.'}
           </Text>
         </View>
 
-        {/* Specialties */}
-        <View style={styles.section}>
-          <Text style={styles.sectionHeading}>Especialidades</Text>
-          <View style={styles.tagGrid}>
-            {['Hipertrofia', 'Nutrición Deportiva', 'HIIT', 'Movilidad', 'Psicología del Deporte'].map((tag) => (
-              <View key={tag} style={styles.tag}>
-                <Text style={styles.tagText}>{tag}</Text>
-              </View>
-            ))}
-          </View>
-        </View>
-
-        {/* Certifications */}
+        {/* Certifications (Static for now, but linked to profile) */}
         <View style={styles.certSection}>
           <View style={styles.certHeader}>
-            <Image source={{ uri: imgIconMedal }} style={styles.medalIcon} />
+            <Ionicons name="ribbon" size={20} color="#000" />
             <Text style={styles.certHeading}>Certificaciones</Text>
           </View>
           
           <View style={styles.certList}>
-            <View style={styles.certItem}>
-              <View style={styles.certIconBox}>
-                <Image source={{ uri: imgIconCert1 }} style={styles.certIcon} />
-              </View>
-              <View>
-                <Text style={styles.certTitle}>NASM Certified Master Trainer</Text>
-                <Text style={styles.certOrg}>National Academy of Sports Medicine</Text>
-              </View>
-            </View>
-
-            <View style={styles.certItem}>
-              <View style={styles.certIconBox}>
-                <Image source={{ uri: imgIconCert2 }} style={styles.certIcon} />
-              </View>
-              <View>
-                <Text style={styles.certTitle}>Precision Nutrition L2</Text>
-                <Text style={styles.certOrg}>Health & Sports Nutrition specialist</Text>
-              </View>
-            </View>
-
-            <View style={styles.certItem}>
-              <View style={styles.certIconBox}>
-                <Image source={{ uri: imgIconCert3 }} style={styles.certIcon} />
-              </View>
-              <View>
-                <Text style={styles.certTitle}>CSCS Specialist</Text>
-                <Text style={styles.certOrg}>Strength & Conditioning Association</Text>
-              </View>
-            </View>
+            {user?.certifications?.map((cert, idx) => (
+                <View key={idx} style={styles.certItem}>
+                    <View style={styles.certIconBox}>
+                        <MaterialCommunityIcons name="medal" size={20} color="#8DC63F" />
+                    </View>
+                    <View>
+                        <Text style={styles.certTitle}>{cert}</Text>
+                        <Text style={styles.certOrg}>Certificación Verificada</Text>
+                    </View>
+                </View>
+            ))}
+            {(!user?.certifications || user.certifications.length === 0) && (
+                <Text style={styles.emptyText}>No has agregado certificaciones aún.</Text>
+            )}
           </View>
         </View>
       </ScrollView>
 
+      {/* Edit Modal */}
+      <Modal visible={editModalVisible} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Editar Perfil</Text>
+                <TouchableOpacity onPress={() => setEditModalVisible(false)}>
+                    <Ionicons name="close" size={24} color="#000" />
+                </TouchableOpacity>
+            </View>
+
+            <ScrollView>
+                <Text style={styles.inputLabel}>NOMBRE COMPLETO</Text>
+                <TextInput style={styles.input} value={fullName} onChangeText={setFullName} placeholder="Tu nombre..." />
+
+                <Text style={styles.inputLabel}>ESPECIALIZACIÓN</Text>
+                <TextInput style={styles.input} value={specialization} onChangeText={setSpecialization} placeholder="Ej: Powerlifting Coach" />
+
+                <Text style={styles.inputLabel}>AÑOS DE EXPERIENCIA</Text>
+                <TextInput style={styles.input} value={yearsExp} onChangeText={setYearsExp} keyboardType="numeric" placeholder="0" />
+
+                <Text style={styles.inputLabel}>BIOGRAFÍA PROFESIONAL</Text>
+                <TextInput 
+                    style={[styles.input, { height: 100 }]} 
+                    value={bio} 
+                    onChangeText={setBio} 
+                    multiline 
+                    placeholder="Cuéntanos sobre tu trayectoria..." 
+                />
+
+                <TouchableOpacity 
+                    style={[styles.saveBtn, loading && { opacity: 0.7 }]} 
+                    onPress={handleSaveProfile}
+                    disabled={loading}
+                >
+                    {loading ? <ActivityIndicator color="#000" /> : <Text style={styles.saveBtnText}>Guardar Cambios</Text>}
+                </TouchableOpacity>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
       {/* ── Bottom Nav ── */}
       <View style={styles.bottomNav}>
-        <TouchableOpacity style={styles.navItem} activeOpacity={0.7}>
-          <Image source={{ uri: imgNavDashboard }} style={styles.navIcon} />
-          <Text style={styles.navLabel}>Dashboard</Text>
+        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('DashboardCoach', { user, token })}>
+          <Ionicons name="grid-outline" size={24} color="#64748b" />
+          <Text style={styles.navText}>INICIO</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} activeOpacity={0.7}>
-          <Image source={{ uri: imgNavClients }} style={styles.navIcon} />
-          <Text style={styles.navLabel}>Clientes</Text>
+        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('ClientesCoach', { user, token })}>
+          <Ionicons name="people-outline" size={24} color="#64748b" />
+          <Text style={styles.navText}>ATLETAS</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} activeOpacity={0.7}>
-          <Image source={{ uri: imgNavRoutines }} style={styles.navIcon} />
-          <Text style={styles.navLabel}>Rutinas</Text>
+        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('RutinasCoach', { user, token })}>
+          <Ionicons name="barbell-outline" size={24} color="#64748b" />
+          <Text style={styles.navText}>RUTINAS</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.navItem, styles.navItemActive]} activeOpacity={0.7}>
-          <Image source={{ uri: imgNavProfile }} style={[styles.navIcon, { tintColor: '#5b7300' }]} />
-          <Text style={[styles.navLabel, styles.navLabelActive]}>Perfil</Text>
+        <TouchableOpacity style={[styles.navItem, styles.navItemActive]}>
+          <Ionicons name="person" size={24} color="#000" />
+          <Text style={styles.navTextActive}>PERFIL</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
 };
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: '#f9f9fc',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 24,
-    paddingVertical: 16,
-    backgroundColor: 'rgba(249,249,252,0.7)',
-    zIndex: 10,
-  },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  logo: {
-    width: 44,
-    height: 44,
-  },
-  brandText: {
-    fontSize: 20,
-    fontWeight: '800',
-  },
+  root: { flex: 1, backgroundColor: '#FAFAFA' },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: Platform.OS === 'android' ? 40 : 10, paddingBottom: 15 },
+  headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  brandText: { fontSize: 18, fontWeight: '800' },
   brandVision: { color: '#000' },
-  brandFeast: { color: '#9ed02f' },
-  trainerLabel: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#000',
-  },
-  closeBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#f3f3f6',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  closeIcon: {
-    width: 14,
-    height: 14,
-  },
-  scroll: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: 24,
-    paddingTop: 24,
-    paddingBottom: 100,
-  },
-  imageContainer: {
-    width: '100%',
-    height: 420,
-    borderRadius: 32,
-    overflow: 'hidden',
-    backgroundColor: '#e8e8ea',
-    marginBottom: 32,
-    shadowColor: '#1a1c1e',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.04,
-    shadowRadius: 32,
-    elevation: 4,
-  },
-  profileImg: {
-    width: '100%',
-    height: '100%',
-  },
-  infoSection: {
-    marginBottom: 24,
-    gap: 8,
-  },
-  locationRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  pinIcon: {
-    width: 10,
-    height: 12,
-  },
-  locationText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#64748b',
-    letterSpacing: 0.7,
-  },
-  name: {
-    fontSize: 48,
-    fontWeight: '800',
-    color: '#1a1c1e',
-    letterSpacing: -1.2,
-  },
-  role: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#506600',
-  },
-  actionRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 32,
-  },
-  editBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#cf0',
-    paddingHorizontal: 32,
-    paddingVertical: 12,
-    borderRadius: 999,
-    gap: 8,
-    shadowColor: '#1a1c1e',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.04,
-    shadowRadius: 32,
-    elevation: 2,
-  },
-  editIcon: {
-    width: 18,
-    height: 18,
-  },
-  editBtnText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#5b7300',
-  },
-  shareBtn: {
-    borderWidth: 1,
-    borderColor: 'rgba(196,201,172,0.2)',
-    paddingHorizontal: 33,
-    paddingVertical: 13,
-    borderRadius: 999,
-    justifyContent: 'center',
-  },
-  shareBtnText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#1a1c1e',
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    gap: 16,
-    marginBottom: 48,
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    gap: 4,
-    shadowColor: '#1a1c1e',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.04,
-    shadowRadius: 32,
-    elevation: 2,
-  },
-  statNumber: {
-    fontSize: 30,
-    fontWeight: '700',
-    color: '#1a1c1e',
-  },
-  statLabel: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#94a3b8',
-    letterSpacing: 1,
-  },
-  section: {
-    marginBottom: 48,
-    gap: 16,
-  },
-  sectionHeading: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#1a1c1e',
-  },
-  aboutText: {
-    fontSize: 16,
-    lineHeight: 26,
-    color: '#475569',
-  },
-  tagGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
-  tag: {
-    backgroundColor: '#d0ef77',
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    borderRadius: 999,
-  },
-  tagText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#556d00',
-  },
-  certSection: {
-    backgroundColor: '#f3f3f6',
-    borderRadius: 16,
-    padding: 24,
-    gap: 24,
-  },
-  certHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  medalIcon: {
-    width: 16,
-    height: 21,
-  },
-  certHeading: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1a1c1e',
-  },
-  certList: {
-    gap: 24,
-  },
-  certItem: {
-    flexDirection: 'row',
-    gap: 16,
-    alignItems: 'center',
-  },
-  certIconBox: {
-    width: 40,
-    height: 40,
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  certIcon: {
-    width: 22,
-    height: 22,
-  },
-  certTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#1a1c1e',
-  },
-  certOrg: {
-    fontSize: 12,
-    color: '#64748b',
-  },
-  bottomNav: {
-    height: 80,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-around',
-    paddingHorizontal: 8,
-    backgroundColor: 'rgba(255,255,255,0.8)',
-  },
-  navItem: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 8,
-    borderRadius: 16,
-  },
-  navItemActive: {
-    backgroundColor: '#9ed02f',
-  },
-  navIcon: {
-    width: 20,
-    height: 20,
-  },
-  navLabel: {
-    marginTop: 4,
-    fontSize: 10,
-    fontWeight: '600',
-    color: 'rgba(26,28,30,0.4)',
-    letterSpacing: -0.5,
-  },
-  navLabelActive: {
-    color: '#5b7300',
-  },
+  brandFeast: { color: '#8DC63F' },
+  trainerLabel: { fontSize: 10, fontWeight: '700', color: '#64748b', letterSpacing: 1 },
+  closeBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center' },
+  scroll: { flex: 1 },
+  scrollContent: { paddingHorizontal: 20, paddingBottom: 120 },
+  imageContainer: { width: '100%', height: 350, borderRadius: 32, overflow: 'hidden', marginBottom: 24, elevation: 4 },
+  profileImg: { width: '100%', height: '100%' },
+  infoSection: { marginBottom: 24 },
+  locationRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 },
+  locationText: { fontSize: 12, fontWeight: '700', color: '#64748b', letterSpacing: 0.5 },
+  name: { fontSize: 40, fontWeight: '800', color: '#1E293B', letterSpacing: -1 },
+  role: { fontSize: 18, fontWeight: '700', color: '#8DC63F' },
+  actionRow: { flexDirection: 'row', gap: 12, marginBottom: 32 },
+  editBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: '#8DC63F', paddingVertical: 14, borderRadius: 50, justifyContent: 'center', gap: 8 },
+  editBtnText: { fontSize: 15, fontWeight: '800', color: '#000' },
+  logoutBtn: { backgroundColor: '#FFF', borderWidth: 1, borderColor: '#FEE2E2', paddingHorizontal: 24, paddingVertical: 14, borderRadius: 50, flexDirection: 'row', gap: 8, alignItems: 'center' },
+  logoutBtnText: { fontSize: 15, fontWeight: '700', color: '#EF4444' },
+  statsGrid: { flexDirection: 'row', gap: 12, marginBottom: 40 },
+  statCard: { flex: 1, backgroundColor: '#FFF', borderRadius: 20, padding: 16, elevation: 2 },
+  statNumber: { fontSize: 24, fontWeight: '800', color: '#1E293B' },
+  statLabel: { fontSize: 9, fontWeight: '700', color: '#94A3B8', marginTop: 4 },
+  section: { marginBottom: 32 },
+  sectionHeading: { fontSize: 20, fontWeight: '800', color: '#1E293B', marginBottom: 12 },
+  aboutText: { fontSize: 14, lineHeight: 22, color: '#475569' },
+  certSection: { backgroundColor: '#F8FAFC', borderRadius: 24, padding: 24 },
+  certHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 20 },
+  certHeading: { fontSize: 18, fontWeight: '800', color: '#1E293B' },
+  certList: { gap: 20 },
+  certItem: { flexDirection: 'row', gap: 16, alignItems: 'center' },
+  certIconBox: { width: 44, height: 44, backgroundColor: '#FFF', borderRadius: 12, alignItems: 'center', justifyContent: 'center', elevation: 1 },
+  certTitle: { fontSize: 14, fontWeight: '700', color: '#1E293B' },
+  certOrg: { fontSize: 11, color: '#64748b' },
+  emptyText: { color: '#94A3B8', fontSize: 12, fontStyle: 'italic' },
+  // Modal styles
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  modalContent: { backgroundColor: '#FFF', borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, height: '80%' },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
+  modalTitle: { fontSize: 24, fontWeight: '800', color: '#1E293B' },
+  inputLabel: { fontSize: 10, fontWeight: '900', color: '#94A3B8', letterSpacing: 1, marginBottom: 8 },
+  input: { backgroundColor: '#F1F5F9', borderRadius: 12, padding: 16, fontSize: 16, color: '#1E293B', marginBottom: 20 },
+  saveBtn: { backgroundColor: '#8DC63F', borderRadius: 16, paddingVertical: 18, alignItems: 'center', marginTop: 10 },
+  saveBtnText: { fontSize: 16, fontWeight: '800', color: '#000' },
+  // Nav
+  bottomNav: { position: 'absolute', bottom: 20, left: 20, right: 20, backgroundColor: '#FFF', flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', paddingVertical: 12, borderRadius: 30, elevation: 10 },
+  navItem: { alignItems: 'center', paddingHorizontal: 12 },
+  navItemActive: { backgroundColor: '#F0FDF4', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20 },
+  navText: { fontSize: 9, fontWeight: '600', color: '#64748b', marginTop: 4 },
+  navTextActive: { fontSize: 9, fontWeight: '700', color: '#000', marginTop: 4 },
 });
 
 export default PerfilScreen;

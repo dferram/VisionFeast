@@ -23,6 +23,7 @@ class User(Document):
     email: EmailStr
     full_name: str
     hashed_password: Optional[str] = None
+    kcal_diarias: Optional[float] = 2100.0
     picture: Optional[str] = None
     auth_provider: AuthProvider = AuthProvider.EMAIL
     google_id: Optional[str] = None
@@ -43,6 +44,10 @@ class User(Document):
     certifications: Optional[List[str]] = []
     bio: Optional[str] = None
     phone: Optional[str] = None
+    
+    # Relationships
+    coach_id: Optional[str] = None
+    nutritionist_id: Optional[str] = None
     
     class Settings:
         """Beanie document settings."""
