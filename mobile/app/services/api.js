@@ -230,6 +230,22 @@ export const api = {
       body: JSON.stringify({ goal })
     });
   },
+
+  // Meal CRUD operations
+  updateMeal: async (token, mealId, mealData) => {
+    return request(`/ai/meals/${mealId}`, {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify(mealData)
+    });
+  },
+
+  deleteMeal: async (token, mealId) => {
+    return request(`/ai/meals/${mealId}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` }
+    });
+  },
 };
 
 export default api;

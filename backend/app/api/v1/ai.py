@@ -117,14 +117,24 @@ Responde SOLO en JSON: una lista de objetos. Cada objeto tiene: nombre, series (
         return {"routine": DEMO_ROUTINE, "source": "demo"}
 
 
-@router.post("/analyze-food", response_model=FoodAnalysisResponse)
+@router.post("/analyze-food", response_model=FoodAnalysisResponse, tags=["AI Analysis"])
 async def analyze_food_image(
     request: FoodAnalysisRequest,
     current_user: User = Depends(get_current_active_user)
 ):
     """
-    Análisis de Visión Nutricional: Analiza una imagen de comida y proporciona
-    información nutricional completa con coach insights personalizados.
+    ## Análisis de Visión Nutricional con IA
+    
+    Analiza una imagen de comida usando Google Gemini Vision AI y proporciona:
+    - Identificación precisa del platillo
+    - Cálculo de macronutrientes (calorías, proteínas, carbohidratos, grasas)
+    - Lista de ingredientes detectados
+    - Advertencias nutricionales
+    - Coach insight personalizado
+    - Audio del coach insight (ElevenLabs TTS)
+    
+    **IMPORTANTE**: Este endpoint NO guarda la comida automáticamente.
+    Usa `/confirm-meal` después de que el usuario confirme el análisis.
     """
     try:
         image_data = base64.b64decode(request.image_base64)
@@ -224,14 +234,22 @@ async def analyze_food_upload(
             detail=f"Error al analizar imagen: {str(e)}"
         )
 
-@router.post("/confirm-meal", response_model=Dict[str, Any])
+@router.post("/confirm-meal", response_model=Dict[str, Any], tags=["Meal Management"])
 async def confirm_and_save_meal(
     request: FoodAnalysisRequest,
     current_user: User = Depends(get_current_active_user)
 ):
     """
-    Confirmar y guardar comida: Guarda el análisis de comida después de que
+    ## Confirmar y Guardar Comida
+    
+    Guarda el análisis de comida en la base de datos después de que
     el usuario confirme que la identificación es correcta.
+    
+    **Flujo recomendado:**
+    1. Usuario toma foto
+    2. Llama a `/analyze-food` para obtener análisis
+    3. Usuario revisa y confirma
+    4. Llama a este endpoint para guardar
     """
     try:
         # Decodificar y re-analizar para obtener datos frescos
@@ -294,14 +312,19 @@ async def confirm_and_save_meal(
             detail=f"Error al confirmar comida: {str(e)}"
         )
 
-@router.post("/log-manual", response_model=Dict[str, Any])
+@router.post("/log-manual", response_model=Dict[str, Any], tags=["Meal Management"])
 async def log_manual_meal(
     request: ManualMealRequest,
     current_user: User = Depends(get_current_active_user)
 ):
     """
-    Registro manual de comida: Permite al usuario ingresar los datos nutricionales
-    directamente sin usar análisis de imagen.
+    ## Registro Manual de Comida
+    
+    Permite al usuario ingresar los datos nutricionales directamente
+    sin usar análisis de imagen. Útil cuando:
+    - El análisis de IA no es preciso
+    - El usuario ya conoce los macros
+    - La comida no se puede fotografiar
     """
     try:
         meal_log = MealLog(
@@ -458,13 +481,21 @@ async def analyze_eating_patterns(
             detail=f"Error al analizar patrones: {str(e)}"
         )
 
-@router.get("/my-meals")
+@router.get("/my-meals", tags=["Meal Management"])
 async def get_my_meals(
     limit: int = 20,
     current_user: User = Depends(get_current_active_user)
 ):
     """
-    Obtiene el historial de comidas del usuario.
+    ## Obtener Historial de Comidas
+    
+    Retorna el historial de comidas registradas del usuario autenticado.
+    
+    **Parámetros:**
+    - `limit`: Número máximo de comidas a retornar (default: 20)
+    
+    **Retorna:**
+    - Lista de comidas con análisis de IA y timestamps
     """
     try:
         meals = await MealLog.find(
@@ -487,4 +518,118 @@ async def get_my_meals(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error al obtener comidas: {str(e)}"
+        )
+
+@router.put("/meals/{meal_id}", tags=["Meal Management"])
+async def update_meal(
+    meal_id: str,
+    request: ManualMealRequest,
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    ## Editar Comida
+    
+    Permite al usuario editar los datos nutricionales de una comida registrada.
+    
+    **Parámetros:**
+    - `meal_id`: ID de la comida a editar
+    - `request`: Nuevos datos nutricionales
+    
+    **Retorna:**
+    - Confirmación de actualización exitosa
+    """
+    try:
+        from beanie import PydanticObjectId
+        
+        # Buscar la comida
+        meal = await MealLog.get(PydanticObjectId(meal_id))
+        
+        if not meal:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Comida no encontrada"
+            )
+        
+        # Verificar que pertenece al usuario
+        if meal.user_id != current_user.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="No tienes permiso para editar esta comida"
+            )
+        
+        # Actualizar datos
+        meal.comida["nombre"] = request.nombre
+        meal.analisis_ia["kcal"] = request.kcal
+        meal.analisis_ia["macros"] = {
+            "p": request.p,
+            "c": request.c,
+            "g": request.g
+        }
+        
+        await meal.save()
+        
+        return {
+            "status": "success",
+            "message": "Comida actualizada correctamente",
+            "id": str(meal.id)
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error al actualizar comida: {str(e)}"
+        )
+
+@router.delete("/meals/{meal_id}", tags=["Meal Management"])
+async def delete_meal(
+    meal_id: str,
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    ## Eliminar Comida
+    
+    Permite al usuario eliminar una comida de su historial.
+    
+    **Parámetros:**
+    - `meal_id`: ID de la comida a eliminar
+    
+    **Retorna:**
+    - Confirmación de eliminación exitosa
+    """
+    try:
+        from beanie import PydanticObjectId
+        
+        # Buscar la comida
+        meal = await MealLog.get(PydanticObjectId(meal_id))
+        
+        if not meal:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Comida no encontrada"
+            )
+        
+        # Verificar que pertenece al usuario
+        if meal.user_id != current_user.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="No tienes permiso para eliminar esta comida"
+            )
+        
+        # Eliminar
+        await meal.delete()
+        
+        return {
+            "status": "success",
+            "message": "Comida eliminada correctamente",
+            "id": meal_id
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error al eliminar comida: {str(e)}"
         )
