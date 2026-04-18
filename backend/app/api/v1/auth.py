@@ -13,6 +13,7 @@ from app.schemas.login_schemas import LoginRequest, LoginResponse
 from app.services.auth_service import AuthService
 from app.core.security import get_current_active_user
 from app.models.user_model import User
+from app.models.professional_model import ProfessionalProfile
 from app.core.config import settings
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -108,57 +109,70 @@ async def login(request: LoginRequest):
     
     Returns user information and JWT access token.
     """
-    # Find user by email
+    # Try to find in users collection first (clients)
     user = await User.find_one(User.email == request.email)
     
+    # If not found, try professionals collection (coaches and nutritionists)
+    professional = None
     if not user:
+        professional = await ProfessionalProfile.find_one(ProfessionalProfile.email == request.email)
+    
+    # Check if user/professional exists
+    if not user and not professional:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Credenciales incorrectas"
         )
+    
+    # Determine which entity we're working with
+    entity = user if user else professional
     
     # Verify password
-    if not user.hashed_password or not verify_password(request.password, user.hashed_password):
+    if not entity.hashed_password or not verify_password(request.password, entity.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Credenciales incorrectas"
         )
     
-    # Check if user is active
-    if not user.is_active:
+    # Check if user/professional is active
+    if not entity.is_active:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Usuario inactivo"
         )
     
-    # Create access token
-    access_token = create_access_token(data={"sub": user.email, "role": user.role})
-    
-    # Build user response based on role
-    user_data = {
-        "id": str(user.id),
-        "email": user.email,
-        "full_name": user.full_name,
-        "role": user.role,
-        "picture": user.picture,
-    }
-    
-    # Add role-specific fields
-    if user.role == "client":
-        user_data.update({
+    # Build response based on entity type
+    if user:
+        # Client user
+        role = user.role
+        access_token = create_access_token(data={"sub": user.email, "role": role})
+        user_data = {
+            "id": str(user.id),
+            "email": user.email,
+            "full_name": user.full_name,
+            "role": role,
+            "picture": user.picture,
             "dietary_preferences": user.dietary_preferences,
             "allergies": user.allergies,
             "health_goals": user.health_goals,
-        })
-    elif user.role in ["coach", "nutritionist"]:
-        user_data.update({
-            "license_number": user.license_number,
-            "specialization": user.specialization,
-            "years_experience": user.years_experience,
-            "certifications": user.certifications,
-            "bio": user.bio,
-            "phone": user.phone,
-        })
+        }
+    else:
+        # Professional (coach or nutritionist)
+        role = "coach" if professional.tipo == "entrenador" else "nutritionist"
+        access_token = create_access_token(data={"sub": professional.email, "role": role})
+        user_data = {
+            "id": str(professional.id),
+            "email": professional.email,
+            "full_name": professional.nombre_completo,
+            "role": role,
+            "picture": None,
+            "license_number": professional.cedula_profesional,
+            "specialization": professional.perfil_profesional.get("especialidad"),
+            "years_experience": professional.anos_experiencia,
+            "certifications": professional.certificaciones,
+            "bio": professional.perfil_profesional.get("biografia"),
+            "phone": professional.telefono,
+        }
     
     return LoginResponse(
         message="Login exitoso",

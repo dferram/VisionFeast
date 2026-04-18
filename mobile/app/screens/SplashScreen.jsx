@@ -18,7 +18,7 @@ const SplashScreen = ({ navigation }) => {
           <Text style={styles.titleBlack}>Vision </Text>
           <Text style={styles.titleGreen}>Feast</Text>
         </Text>
-        
+
         <View style={styles.logoContainer}>
           <Image
             source={{ uri: 'https://www.figma.com/api/mcp/asset/6636cc8f-6222-4394-acbb-1594a1fbde5b' }}
@@ -29,7 +29,11 @@ const SplashScreen = ({ navigation }) => {
 
         <View style={styles.poweredByContainer}>
           <Text style={styles.poweredByText}>Powered by</Text>
-          <Text style={styles.geminiText}>✨ Gemini</Text>
+          <Image
+            source={require("../../assets/gemini_logo.png")}
+            style={styles.logo}
+            resizeMode="contain"
+          />
         </View>
       </View>
     </View>
