@@ -21,6 +21,7 @@ from typing import List, Dict, Any
 import google.generativeai as genai
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 router = APIRouter(prefix="/ai", tags=["AI Services"])
 
@@ -137,7 +138,9 @@ async def analyze_food_image(
     Usa `/confirm-meal` después de que el usuario confirme el análisis.
     """
     try:
+        logger.info(f"🔍 Analizando imagen para usuario: {current_user.email}")
         image_data = base64.b64decode(request.image_base64)
+        logger.info(f"📸 Imagen decodificada: {len(image_data)} bytes")
         
         user_goals = {
             "meta": getattr(current_user, "meta", "Mantener"),
@@ -147,11 +150,13 @@ async def analyze_food_image(
         
         medical_context = getattr(current_user, "medical_context", None)
         
+        logger.info(f"🎯 Objetivos del usuario: {user_goals}")
         analysis = await gemini_service.analyze_food_image(
             image_data=image_data,
             user_goals=user_goals,
             medical_context=medical_context
         )
+        logger.info(f"✅ Análisis completado: {analysis.get('nombre', 'Unknown')}")
         
         user_profile = {
             "nombre": current_user.full_name,

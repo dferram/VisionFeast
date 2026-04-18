@@ -142,10 +142,13 @@ ANALIZA LA IMAGEN AHORA:"""
             return json.loads(result_text)
         except Exception as e:
             error_msg = str(e).lower()
-            if "429" in error_msg or "quota" in error_msg or "rate" in error_msg:
-                print("⚠️ Cuota agotada — usando modo demo")
+            # Casos donde usamos modo demo en lugar de fallar
+            if any(keyword in error_msg for keyword in ["429", "quota", "rate", "unreachable", "timeout", "connection", "network"]):
+                print(f"⚠️ Gemini no disponible ({str(e)[:50]}) — usando modo demo")
                 self.demo_mode = True
                 return self._demo_analysis()
+            # Otros errores se propagan
+            print(f"❌ Error crítico en Gemini: {str(e)}")
             raise Exception(f"Error al analizar imagen con Gemini: {str(e)}")
     
     async def generate_coach_insight(
