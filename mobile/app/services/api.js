@@ -153,6 +153,17 @@ export const api = {
     return api.analyzeFood(token, base64Image);
   },
 
+  confirmMeal: async (token, base64Image, momento = 'comida') => {
+    return request('/ai/confirm-meal', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify({
+        image_base64: base64Image,
+        momento: momento
+      })
+    });
+  },
+
   logManualMeal: async (token, mealData) => {
     return request('/ai/log-manual', {
       method: 'POST',

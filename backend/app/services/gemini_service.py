@@ -79,20 +79,56 @@ class GeminiService:
         medical_context: Optional[str] = None
     ) -> Dict[str, Any]:
         """Análisis de Visión Nutricional con fallback a demo."""
-        prompt = f"""Analiza esta imagen de comida y proporciona un análisis nutricional detallado.
-Meta: {user_goals.get('meta', 'Mantener')}
-Kcal objetivo: {user_goals.get('kcal_diarias', 2000)}
-{f"Contexto médico: {medical_context}" if medical_context else ""}
+        prompt = f"""Eres un nutriólogo experto con visión computacional especializado en identificación precisa de alimentos mexicanos e internacionales.
 
-Responde SOLO en JSON:
+TAREA: Analiza la imagen de comida con MÁXIMA PRECISIÓN y proporciona análisis nutricional detallado.
+
+INSTRUCCIONES PASO A PASO:
+1. OBSERVA cuidadosamente TODOS los elementos visibles en la imagen
+2. IDENTIFICA el platillo principal, guarniciones y acompañamientos
+3. RECONOCE ingredientes específicos (no generalices)
+4. ESTIMA porciones basándote en referencias visuales (plato, cubiertos, manos)
+5. CALCULA macronutrientes usando bases de datos nutricionales estándar
+6. EVALÚA nivel de confianza en tu identificación (0.0 a 1.0)
+
+CONTEXTO DEL USUARIO:
+- Meta nutricional: {user_goals.get('meta', 'Mantener peso')}
+- Calorías objetivo diarias: {user_goals.get('kcal_diarias', 2000)} kcal
+{f"- Restricciones médicas: {medical_context}" if medical_context else ""}
+
+EJEMPLOS DE IDENTIFICACIÓN CORRECTA:
+- Si ves tortillas + carne + cebolla + cilantro → "Tacos de Carne Asada" (NO "Tacos genéricos")
+- Si ves arroz + pollo + verduras → "Bowl de Pollo con Arroz y Vegetales" (NO "Comida mixta")
+- Si ves pan + jamón + queso → "Sándwich de Jamón y Queso" (NO "Emparedado")
+
+REGLAS CRÍTICAS:
+✓ SÉ ESPECÍFICO: Usa nombres exactos de platillos (ej: "Enchiladas Verdes" no "Comida mexicana")
+✓ INCLUYE PREPARACIÓN: Menciona método de cocción si es visible (a la parrilla, frito, horneado)
+✓ DETECTA PORCIONES: Ajusta calorías según tamaño visible (pequeña/mediana/grande)
+✓ LISTA INGREDIENTES VISIBLES: Solo incluye lo que REALMENTE ves en la imagen
+✓ CONFIDENCE SCORE HONESTO: 
+  - 0.9-1.0 = Platillo claramente identificable
+  - 0.7-0.8 = Identificación probable pero con incertidumbre
+  - <0.7 = Difícil de identificar con precisión
+✗ NO INVENTES ingredientes que no ves
+✗ NO uses nombres genéricos si puedes ser específico
+✗ NO sobrestimes o subestimes porciones sin evidencia visual
+
+FORMATO DE RESPUESTA (SOLO JSON, SIN MARKDOWN):
 {{
-    "nombre": "nombre del plato",
-    "kcal": calorias_num,
-    "macros": {{"p": prot_g, "c": carb_g, "g": grasa_g}},
-    "confidence_score": 0.9,
-    "ingredientes": [],
-    "advertencias": []
-}}"""
+    "nombre": "Nombre Específico del Platillo con Método de Preparación",
+    "kcal": número_calorías_estimadas,
+    "macros": {{
+        "p": gramos_proteína,
+        "c": gramos_carbohidratos,
+        "g": gramos_grasa
+    }},
+    "confidence_score": 0.0_a_1.0,
+    "ingredientes": ["Ingrediente 1 visible", "Ingrediente 2 visible", "..."],
+    "advertencias": ["Advertencia si aplica (ej: alto en sodio, contiene gluten)"]
+}}
+
+ANALIZA LA IMAGEN AHORA:"""
 
         try:
             response = self.vision_model.generate_content([prompt, {"mime_type": "image/jpeg", "data": image_data}])

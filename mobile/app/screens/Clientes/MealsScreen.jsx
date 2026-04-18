@@ -25,6 +25,20 @@ export default function MealsScreen({ navigation, route }) {
   const [loading, setLoading] = useState(false);
   const [mealLogs, setMealLogs] = useState([]);
   const [stats, setStats] = useState({ kcal: 1420, protein: 84, carbs: 120, fats: 32 });
+  
+  // Estados para confirmación de análisis
+  const [analysisResult, setAnalysisResult] = useState(null);
+  const [capturedImageBase64, setCapturedImageBase64] = useState(null);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showManualModal, setShowManualModal] = useState(false);
+  const [manualForm, setManualForm] = useState({
+    nombre: '',
+    kcal: '',
+    p: '0',
+    c: '0',
+    g: '0',
+    momento: 'comida'
+  });
 
   useFocusEffect(
     React.useCallback(() => {
@@ -100,39 +114,52 @@ export default function MealsScreen({ navigation, route }) {
   const analyzeImage = async (base64) => {
     setLoading(true);
     try {
-      const result = await api.analyzeFoodFromUrl(token, base64Image);
+      const result = await api.analyzeFoodFromUrl(token, base64);
       
-      // Construir mensaje con toda la información
-      let message = `🍽️ ${result.nombre}\n\n`;
-      message += `📊 MACRONUTRIENTES:\n`;
-      message += `• Calorías: ${result.kcal} kcal\n`;
-      message += `• Proteínas: ${result.macros?.p || 0}g\n`;
-      message += `• Carbohidratos: ${result.macros?.c || 0}g\n`;
-      message += `• Grasas: ${result.macros?.g || 0}g\n`;
+      // Guardar resultado y base64 para confirmación posterior
+      setAnalysisResult(result);
+      setCapturedImageBase64(base64);
+      setShowConfirmModal(true);
       
-      if (result.ingredientes && result.ingredientes.length > 0) {
-        message += `\n🥗 INGREDIENTES:\n`;
-        message += result.ingredientes.map(ing => `• ${ing}`).join('\n');
-      }
-      
-      if (result.advertencias && result.advertencias.length > 0) {
-        message += `\n\n⚠️ ADVERTENCIAS:\n`;
-        message += result.advertencias.map(adv => `• ${adv}`).join('\n');
-      }
-      
-      message += `\n\n💬 COACH:\n${result.coach_insight}`;
-      message += `\n\n✓ Precisión: ${Math.round((result.confidence_score || 0) * 100)}%`;
-      
-      Alert.alert(
-        "✅ Análisis Completado",
-        message,
-        [{ text: "OK", onPress: loadMeals }]
-      );
     } catch (error) {
-      Alert.alert("Error de Análisis", error.message);
+      Alert.alert("Error de Análisis", error.message || "No se pudo analizar la imagen");
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleConfirmMeal = async () => {
+    if (!capturedImageBase64) return;
+    
+    setLoading(true);
+    try {
+      await api.confirmMeal(token, capturedImageBase64, 'comida');
+      setShowConfirmModal(false);
+      setAnalysisResult(null);
+      setCapturedImageBase64(null);
+      Alert.alert("✅ Guardado", "Comida registrada exitosamente");
+      await loadMeals();
+    } catch (error) {
+      Alert.alert("Error", "No se pudo guardar la comida: " + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRejectAndRescan = () => {
+    setShowConfirmModal(false);
+    setAnalysisResult(null);
+    setCapturedImageBase64(null);
+    // Volver a abrir la cámara
+    pickImage();
+  };
+
+  const handleRejectAndManual = () => {
+    setShowConfirmModal(false);
+    setAnalysisResult(null);
+    setCapturedImageBase64(null);
+    // Abrir modal de registro manual
+    setShowManualModal(true);
   };
 
   const handleManualSubmit = async () => {
@@ -268,8 +295,8 @@ export default function MealsScreen({ navigation, route }) {
         </View>
       </Modal>
 
-      {/* Result Modal - AI Analysis */}
-      <Modal visible={showResultModal} animationType="fade" transparent>
+      {/* Confirmation Modal - AI Analysis */}
+      <Modal visible={showConfirmModal} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
           <View style={styles.resultCard}>
             <View style={styles.resultHeader}>
@@ -304,9 +331,26 @@ export default function MealsScreen({ navigation, route }) {
               <Text style={styles.insightText}>{analysisResult?.coach_insight}</Text>
             </View>
 
-            <TouchableOpacity style={styles.btnCloseResult} onPress={() => setShowResultModal(false)}>
-              <Text style={styles.btnCloseResultText}>Entendido</Text>
-            </TouchableOpacity>
+            <Text style={styles.confirmQuestion}>¿Es correcto este análisis?</Text>
+            
+            <View style={styles.confirmButtonsRow}>
+              <TouchableOpacity style={styles.btnConfirmYes} onPress={handleConfirmMeal}>
+                <Ionicons name="checkmark-circle" size={20} color="#FFF" />
+                <Text style={styles.btnConfirmYesText}>Sí, Guardar</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.rejectButtonsRow}>
+              <TouchableOpacity style={styles.btnRescan} onPress={handleRejectAndRescan}>
+                <Ionicons name="camera-outline" size={18} color="#65A30D" />
+                <Text style={styles.btnRescanText}>Escanear de Nuevo</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity style={styles.btnManualEntry} onPress={handleRejectAndManual}>
+                <Ionicons name="create-outline" size={18} color="#3B82F6" />
+                <Text style={styles.btnManualEntryText}>Registro Manual</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
@@ -386,6 +430,15 @@ const styles = StyleSheet.create({
   navTextActive: { fontSize: 9, fontWeight: '800', color: '#000', marginTop: 4 },
   loadingOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(255,255,255,0.9)', justifyContent: 'center', alignItems: 'center', zIndex: 99 },
   loadingText: { marginTop: 16, fontSize: 16, fontWeight: '800', color: '#65A30D' },
+  confirmQuestion: { fontSize: 16, fontWeight: '700', color: '#1E293B', textAlign: 'center', marginTop: 20, marginBottom: 16 },
+  confirmButtonsRow: { marginBottom: 12 },
+  btnConfirmYes: { backgroundColor: '#65A30D', borderRadius: 16, paddingVertical: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  btnConfirmYesText: { color: '#FFF', fontWeight: '800', fontSize: 16 },
+  rejectButtonsRow: { flexDirection: 'row', gap: 12 },
+  btnRescan: { flex: 1, backgroundColor: '#F0FDF4', borderRadius: 12, paddingVertical: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderWidth: 1, borderColor: '#65A30D' },
+  btnRescanText: { color: '#65A30D', fontWeight: '700', fontSize: 13 },
+  btnManualEntry: { flex: 1, backgroundColor: '#EFF6FF', borderRadius: 12, paddingVertical: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderWidth: 1, borderColor: '#3B82F6' },
+  btnManualEntryText: { color: '#3B82F6', fontWeight: '700', fontSize: 13 },
   safeArea: {
     flex: 1,
     backgroundColor: '#F8FAFC',

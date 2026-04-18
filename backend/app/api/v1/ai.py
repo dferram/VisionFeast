@@ -165,23 +165,8 @@ async def analyze_food_image(
             print(f"Error generando audio: {e}")
             analysis["audio_base64"] = None
         
-        meal_log = MealLog(
-            user_id=current_user.id,
-            comida={
-                "nombre": analysis["nombre"],
-                "foto_url": "",
-                "momento": request.momento
-            },
-            analisis_ia={
-                "kcal": analysis["kcal"],
-                "macros": analysis["macros"],
-                "confidence_score": analysis["confidence_score"],
-                "coach_insight": coach_insight,
-                "ingredientes": analysis.get("ingredientes", []),
-                "advertencias": analysis.get("advertencias", [])
-            }
-        )
-        await meal_log.insert()
+        # NO guardar automáticamente - el usuario debe confirmar primero
+        # El frontend llamará a /confirm-meal para guardar después de la confirmación
         
         return FoodAnalysisResponse(**analysis)
         
@@ -239,6 +224,76 @@ async def analyze_food_upload(
             detail=f"Error al analizar imagen: {str(e)}"
         )
 
+@router.post("/confirm-meal", response_model=Dict[str, Any])
+async def confirm_and_save_meal(
+    request: FoodAnalysisRequest,
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Confirmar y guardar comida: Guarda el análisis de comida después de que
+    el usuario confirme que la identificación es correcta.
+    """
+    try:
+        # Decodificar y re-analizar para obtener datos frescos
+        image_data = base64.b64decode(request.image_base64)
+        
+        user_goals = {
+            "meta": getattr(current_user, "meta", "Mantener"),
+            "kcal_diarias": getattr(current_user, "kcal_diarias", 2000),
+            "macros_target": getattr(current_user, "macros_target", {})
+        }
+        
+        medical_context = getattr(current_user, "medical_context", None)
+        
+        analysis = await gemini_service.analyze_food_image(
+            image_data=image_data,
+            user_goals=user_goals,
+            medical_context=medical_context
+        )
+        
+        user_profile = {
+            "nombre": current_user.full_name,
+            "meta": user_goals["meta"],
+            "kcal_diarias": user_goals["kcal_diarias"],
+            "macros_target": user_goals["macros_target"]
+        }
+        
+        coach_insight = await gemini_service.generate_coach_insight(
+            meal_analysis=analysis,
+            user_profile=user_profile
+        )
+        
+        # Guardar en base de datos
+        meal_log = MealLog(
+            user_id=current_user.id,
+            comida={
+                "nombre": analysis["nombre"],
+                "foto_url": "",
+                "momento": request.momento
+            },
+            analisis_ia={
+                "kcal": analysis["kcal"],
+                "macros": analysis["macros"],
+                "confidence_score": analysis["confidence_score"],
+                "coach_insight": coach_insight,
+                "ingredientes": analysis.get("ingredientes", []),
+                "advertencias": analysis.get("advertencias", [])
+            }
+        )
+        await meal_log.insert()
+        
+        return {
+            "status": "success",
+            "message": "Comida registrada correctamente",
+            "id": str(meal_log.id)
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error al confirmar comida: {str(e)}"
+        )
+
 @router.post("/log-manual", response_model=Dict[str, Any])
 async def log_manual_meal(
     request: ManualMealRequest,
@@ -260,7 +315,9 @@ async def log_manual_meal(
                 "kcal": request.kcal,
                 "macros": {"p": request.p, "c": request.c, "g": request.g},
                 "confidence_score": 1.0,
-                "coach_insight": "Registro manual ingresado por el usuario."
+                "coach_insight": "Registro manual ingresado por el usuario.",
+                "ingredientes": [],
+                "advertencias": []
             }
         )
         await meal_log.insert()
