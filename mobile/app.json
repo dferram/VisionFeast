@@ -1,0 +1,20 @@
+{
+  "expo": {
+    "name": "VisionFeast",
+    "slug": "visionfeast",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.visionfeast.app"
+    },
+    "android": {
+      "package": "com.visionfeast.app"
+    }
+  }
+}
