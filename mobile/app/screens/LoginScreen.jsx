@@ -31,16 +31,17 @@ const LoginScreen = ({ navigation }) => {
       const response = await api.login(email, password);
       console.log('Login exitoso:', response);
       
-      // Navegar según el rol del usuario
-      if (response.user.role === 'client') {
-        navigation.navigate('Dashboard', { user: response.user, token: response.access_token });
-      } else if (response.user.role === 'nutritionist') {
-        navigation.navigate('LunchReview', { user: response.user, token: response.access_token });
-      } else if (response.user.role === 'coach') {
-        navigation.navigate('Dashboard', { user: response.user, token: response.access_token });
+      // Navegar según el rol del usuario (Normalizado)
+      const role = response.user.role.toLowerCase();
+      console.log('Navegando como:', role);
+
+      if (role === 'nutritionist' || role === 'nutriologo') {
+        navigation.navigate('DashboardNutri', { user: response.user, token: response.access_token });
+      } else if (role === 'coach' || role === 'entrenador') {
+        navigation.navigate('DashboardCoach', { user: response.user, token: response.access_token });
       } else {
-        // Fallback para otros roles
-        navigation.navigate('Welcome');
+        // Por defecto: Cliente / Usuario
+        navigation.navigate('Dashboard', { user: response.user, token: response.access_token });
       }
     } catch (error) {
       Alert.alert(

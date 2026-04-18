@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Alert } from 'react-native';
-import API_BASE_URL from '../../services/api';
+import api from '../../services/api';
 
 export default function DashboardScreen({ navigation, route }) {
   const token = route?.params?.token || null;
@@ -28,19 +28,10 @@ export default function DashboardScreen({ navigation, route }) {
       try {
         if (token) {
           // Cargar perfil del usuario si no vino en los params
-          if (!routeUser) {
-            const profileRes = await fetch(`${API_BASE_URL}/api/v1/auth/me`, {
-              headers: { Authorization: `Bearer ${token}` },
-            });
-            if (profileRes.ok) setUser(await profileRes.json());
-          }
-          // Cargar meal logs
-          const mealsRes = await fetch(`${API_BASE_URL}/api/v1/ai/my-meals`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          if (mealsRes.ok) {
-            const meals = await mealsRes.json();
-            setMealLogs(Array.isArray(meals) ? meals.slice(0, 3) : []);
+          // Cargar meal logs reales del servidor
+          const data = await api.getMealLogs(token);
+          if (data && data.meals) {
+            setMealLogs(data.meals);
           }
         }
       } catch (e) {
@@ -73,9 +64,11 @@ export default function DashboardScreen({ navigation, route }) {
   const displayName = user?.full_name?.split(' ')[0]?.toUpperCase() || 'USUARIO';
 
   // Calcula calorías totales del día de los meal_logs
+  // CALCULO REAL DE CALORÍAS
   const totalKcalHoy = mealLogs.reduce((sum, m) => sum + (m?.analisis_ia?.kcal || 0), 0);
-  const metaKcal = 2100; // TODO: leer de user.objetivos.kcal_diarias cuando esté disponible
+  const metaKcal = user?.kcal_diarias || 2100; // Meta real del usuario o 2100 por defecto
   const kcalLeft = Math.max(0, metaKcal - totalKcalHoy);
+  const porcentajeComido = Math.min(100, (totalKcalHoy / metaKcal) * 100);
 
   if (loading) {
     return (
@@ -113,11 +106,11 @@ export default function DashboardScreen({ navigation, route }) {
           {/* Main Ring Area */}
           <View style={styles.mainRingContainer}>
             {/* Using a simple view to represent the circular progress for layout purposes */}
-            <View style={styles.ringBackground}>
+            <View style={[styles.ringBackground, { borderColor: totalKcalHoy > metaKcal ? '#EF4444' : '#8DC63F' }]}>
               <View style={styles.ringInner}>
-                <Text style={styles.caloriesLabel}>CALORIES LEFT</Text>
+                <Text style={styles.caloriesLabel}>CALORÍAS RESTANTES</Text>
                 <Text style={styles.caloriesValue}>{kcalLeft.toLocaleString()}</Text>
-                <Text style={styles.caloriesTotal}>of {metaKcal.toLocaleString()} kcal</Text>
+                <Text style={styles.caloriesTotal}>de {metaKcal.toLocaleString()} kcal hoy</Text>
               </View>
             </View>
           </View>

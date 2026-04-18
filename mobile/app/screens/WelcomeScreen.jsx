@@ -1,12 +1,12 @@
 import React from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, Image, TouchableOpacity, StyleSheet, Dimensions, SafeAreaView } from 'react-native';
 
 const { width, height } = Dimensions.get('window');
 
 const WelcomeScreen = ({ navigation }) => {
   return (
     <View style={styles.container}>
-      {/* Background Image */}
+      {/* Background Image - Regresando tu original */}
       <View style={styles.backgroundImageContainer}>
         <Image
           source={{ uri: 'https://www.figma.com/api/mcp/asset/7e8aaacc-a687-4627-840d-425c82777a21' }}
@@ -17,40 +17,42 @@ const WelcomeScreen = ({ navigation }) => {
 
       {/* White Card Container */}
       <View style={styles.card}>
-        {/* Logo */}
-        <View style={styles.logoContainer}>
-          <Image
-            source={{ uri: 'https://www.figma.com/api/mcp/asset/6c0010ca-8d17-463c-bac1-20d248290652' }}
-            style={styles.logo}
-            resizeMode="contain"
-          />
-        </View>
+        <SafeAreaView style={{ alignItems: 'center', width: '100%' }}>
+          {/* Logo - Regresando tu original */}
+          <View style={styles.logoContainer}>
+            <Image
+              source={{ uri: 'https://www.figma.com/api/mcp/asset/6c0010ca-8d17-463c-bac1-20d248290652' }}
+              style={styles.logo}
+              resizeMode="contain"
+            />
+          </View>
 
-        {/* Title */}
-        <Text style={styles.title}>
-          <Text style={styles.titleBlack}>Vision </Text>
-          <Text style={styles.titleGreen}>Feast</Text>
-        </Text>
+          {/* Title */}
+          <Text style={styles.title}>
+            <Text style={styles.titleBlack}>Vision </Text>
+            <Text style={styles.titleGreen}>Feast</Text>
+          </Text>
 
-        {/* Welcome Text */}
-        <Text style={styles.welcomeText}>Bienvenid@!</Text>
+          {/* Welcome Text */}
+          <Text style={styles.welcomeText}>¡Bienvenid@!</Text>
 
-        {/* Start Button */}
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => navigation.navigate('Login')}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.buttonText}>Comenzar</Text>
-        </TouchableOpacity>
-
-        {/* Login Link */}
-        <View style={styles.loginLinkContainer}>
-          <Text style={styles.loginText}>¿Ya tienes una cuenta? </Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-            <Text style={styles.loginLink}>Inicia sesión</Text>
+          {/* Start Button */}
+          <TouchableOpacity
+            style={styles.button}
+            onPress={() => navigation.navigate('Login')}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.buttonText}>Comenzar</Text>
           </TouchableOpacity>
-        </View>
+
+          {/* Login Link */}
+          <View style={styles.loginLinkContainer}>
+            <Text style={styles.loginText}>¿Ya tienes una cuenta? </Text>
+            <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+              <Text style={styles.loginLink}>Inicia sesión</Text>
+            </TouchableOpacity>
+          </View>
+        </SafeAreaView>
       </View>
     </View>
   );
@@ -63,7 +65,7 @@ const styles = StyleSheet.create({
   },
   backgroundImageContainer: {
     position: 'absolute',
-    left: -184,
+    left: -184, // Regresando tu posición original
     top: -32,
     width: 607,
     height: 364,
@@ -87,7 +89,7 @@ const styles = StyleSheet.create({
   logoContainer: {
     width: 102,
     height: 102,
-    marginTop: 105,
+    marginTop: 60, // Mantenemos el margen corregido para que no choque arriba
     marginBottom: 32,
   },
   logo: {

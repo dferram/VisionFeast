@@ -7,6 +7,7 @@ import {
   ScrollView,
   StyleSheet,
   SafeAreaView,
+  Alert,
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
@@ -64,9 +65,22 @@ const DashboardScreen = ({ navigation, route }) => {
             <Text style={styles.headerSubtitle}>{user?.full_name || 'Coach'}</Text>
           </View>
         </View>
-        <TouchableOpacity>
-          <Ionicons name="notifications-outline" size={24} color="#1a1c1e" />
-        </TouchableOpacity>
+        <View style={styles.headerActions}>
+          <TouchableOpacity style={styles.headerIcon}>
+            <Ionicons name="notifications-outline" size={24} color="#1a1c1e" />
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.logoutBtn} 
+            onPress={() => {
+              Alert.alert('Cerrar Sesión', '¿Estás seguro de que quieres salir?', [
+                { text: 'Cancelar', style: 'cancel' },
+                { text: 'Salir', style: 'destructive', onPress: () => navigation.navigate('Welcome') }
+              ]);
+            }}
+          >
+            <Ionicons name="exit-outline" size={24} color="#FF3B30" />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* ── Scrollable content ── */}
@@ -83,45 +97,45 @@ const DashboardScreen = ({ navigation, route }) => {
 
           <View style={styles.statsRow}>
             {/* Stat card — Clientes Activos */}
-            <View style={[styles.statCard, styles.statCardWhite]}>
-              <View style={styles.statGlow} />
-              <Ionicons name="people" size={28} color="#9ed02f" />
-              <Text style={styles.statNumber}>24</Text>
-              <Text style={styles.statLabel}>Clientes Activos</Text>
+            <View style={styles.statCard}>
+              <View style={[styles.iconCircle, { backgroundColor: '#F0FDF4' }]}>
+                <Ionicons name="people" size={24} color="#8DC63F" />
+              </View>
+              <View>
+                <Text style={styles.statNumber}>24</Text>
+                <Text style={styles.statLabel}>Clientes Activos</Text>
+              </View>
             </View>
 
             {/* Stat card — Cumplimiento */}
-            <View style={[styles.statCard, styles.statCardWhite]}>
-              <View style={styles.circleWrapper}>
-                <Ionicons name="radio-button-off" size={48} color="#f3f3f6" style={styles.circleBg} />
-                <Text style={styles.circlePercent}>75%</Text>
+            <View style={styles.statCard}>
+              <View style={[styles.iconCircle, { backgroundColor: '#EFF6FF' }]}>
+                <MaterialCommunityIcons name="trophy" size={24} color="#3B82F6" />
               </View>
-              <Text style={styles.statLabel2}>Cumplimiento</Text>
-              <Text style={styles.statMeta}>Puntaje Prom.</Text>
+              <View>
+                <Text style={styles.statNumber}>75%</Text>
+                <Text style={styles.statLabel}>Cumplimiento</Text>
+              </View>
             </View>
           </View>
         </View>
 
         {/* Quick Actions */}
         <View style={styles.section}>
-          <Text style={styles.sectionHeading}>Acciones Rápidas</Text>
+          <Text style={styles.sectionHeading}>Gestión Rápida</Text>
           <View style={styles.actionsRow}>
-            {/* Nuevo Cliente */}
-            <TouchableOpacity style={styles.btnPrimary} activeOpacity={0.8}>
-              <Ionicons name="person-add" size={20} color="#5b7300" />
-              <View>
-                <Text style={styles.btnTextGreen}>Nuevo</Text>
-                <Text style={styles.btnTextGreen}>Cliente</Text>
+            <TouchableOpacity style={styles.actionBtn} activeOpacity={0.8}>
+              <View style={[styles.actionIcon, { backgroundColor: '#8DC63F' }]}>
+                <Ionicons name="person-add" size={20} color="#FFF" />
               </View>
+              <Text style={styles.actionBtnText}>Nuevo Cliente</Text>
             </TouchableOpacity>
 
-            {/* Nuevo Programa */}
-            <TouchableOpacity style={styles.btnSecondary} activeOpacity={0.8}>
-              <Ionicons name="document-text" size={20} color="#1a1c1e" />
-              <View>
-                <Text style={styles.btnTextDark}>Nuevo</Text>
-                <Text style={styles.btnTextDark}>Programa</Text>
+            <TouchableOpacity style={styles.actionBtn} activeOpacity={0.8}>
+              <View style={[styles.actionIcon, { backgroundColor: '#1E293B' }]}>
+                <Ionicons name="add-circle" size={20} color="#FFF" />
               </View>
+              <Text style={styles.actionBtnText}>Nuevo Plan</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -129,27 +143,29 @@ const DashboardScreen = ({ navigation, route }) => {
         {/* Client Activity */}
         <View style={styles.section}>
           <View style={styles.activityHeader}>
-            <Text style={styles.sectionHeading}>Actividad de Clientes</Text>
+            <Text style={styles.sectionHeading}>Actividad Reciente</Text>
             <TouchableOpacity onPress={() => navigation.navigate('ClientesCoach')}>
-              <Text style={styles.verTodo}>VER TODO</Text>
+              <Text style={styles.verTodo}>Ver todos</Text>
             </TouchableOpacity>
           </View>
 
-          {activities.map((item) => {
-            const badge = badgeStyle(item.badgeType);
-            return (
-              <View key={item.name} style={styles.activityCard}>
-                <Image source={{ uri: item.avatar }} style={styles.avatar} />
-                <View style={styles.activityInfo}>
-                  <Text style={styles.activityName}>{item.name}</Text>
-                  <Text style={styles.activityAction}>{item.action}</Text>
+          <View style={styles.activityList}>
+            {activities.map((item, idx) => {
+              const badge = badgeStyle(item.badgeType);
+              return (
+                <View key={idx} style={styles.activityCard}>
+                  <Image source={{ uri: item.avatar }} style={styles.avatarImg} />
+                  <View style={styles.activityInfo}>
+                    <Text style={styles.activityName}>{item.name}</Text>
+                    <Text style={styles.activityAction} numberOfLines={1}>{item.action}</Text>
+                  </View>
+                  <View style={[styles.badge, { backgroundColor: badge.bg }]}>
+                    <Text style={[styles.badgeText, { color: badge.text }]}>{item.time}</Text>
+                  </View>
                 </View>
-                <View style={[styles.badge, { backgroundColor: badge.bg }]}>
-                  <Text style={[styles.badgeText, { color: badge.text }]}>{item.time}</Text>
-                </View>
-              </View>
-            );
-          })}
+              );
+            })}
+          </View>
         </View>
 
       </ScrollView>
@@ -203,9 +219,32 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 24,
-    paddingVertical: 16,
+    paddingTop: 50,
+    paddingBottom: 16,
     backgroundColor: '#FFF',
-    elevation: 2,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  headerIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F8F9FA',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  logoutBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FFF1F0',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   headerBrand: {
     flexDirection: 'row',
@@ -261,82 +300,60 @@ const styles = StyleSheet.create({
   },
   statCard: {
     flex: 1,
-    borderRadius: 20,
+    backgroundColor: '#FFF',
+    borderRadius: 24,
     padding: 20,
-    backgroundColor: '#ffffff',
-    elevation: 3,
-    overflow: 'hidden',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 2,
   },
-  statGlow: {
-    position: 'absolute',
-    bottom: -15,
-    right: -16,
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: 'rgba(204,255,0,0.1)',
+  iconCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   statNumber: {
-    fontSize: 36,
+    fontSize: 22,
     fontWeight: '800',
-    color: '#1a1c1e',
-    marginTop: 12,
+    color: '#1E293B',
   },
   statLabel: {
-    fontSize: 12,
-    color: '#666',
-  },
-  circleWrapper: {
-    width: 50,
-    height: 50,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  circlePercent: {
-    fontSize: 12,
-    fontWeight: '700',
-    position: 'absolute',
-  },
-  statLabel2: {
-    fontSize: 18,
-    fontWeight: '800',
-    marginTop: 8,
-  },
-  statMeta: {
     fontSize: 11,
-    color: '#666',
+    color: '#64748B',
+    fontWeight: '600',
   },
   actionsRow: {
     flexDirection: 'row',
     gap: 16,
   },
-  btnPrimary: {
+  actionBtn: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    backgroundColor: '#9ed02f',
+    backgroundColor: '#FFF',
+    borderRadius: 24,
     padding: 16,
-    borderRadius: 20,
-  },
-  btnSecondary: {
-    flex: 1,
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    backgroundColor: '#e8e8ea',
-    padding: 16,
-    borderRadius: 20,
+    gap: 12,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
   },
-  btnTextGreen: {
+  actionIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  actionBtnText: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#5b7300',
-  },
-  btnTextDark: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#1a1c1e',
+    color: '#1E293B',
   },
   activityHeader: {
     flexDirection: 'row',
@@ -344,24 +361,26 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   verTodo: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
-    color: '#506600',
+    color: '#8DC63F',
+  },
+  activityList: {
+    gap: 12,
   },
   activityCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    backgroundColor: '#ffffff',
     padding: 12,
-    borderRadius: 16,
-    marginBottom: 12,
-    elevation: 1,
+    backgroundColor: '#FFF',
+    borderRadius: 20,
+    gap: 12,
   },
-  avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+  avatarImg: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#F1F5F9',
   },
   activityInfo: {
     flex: 1,
@@ -369,19 +388,21 @@ const styles = StyleSheet.create({
   activityName: {
     fontSize: 14,
     fontWeight: '700',
+    color: '#1E293B',
   },
   activityAction: {
-    fontSize: 11,
-    color: '#666',
+    fontSize: 12,
+    color: '#64748B',
+    marginTop: 2,
   },
   badge: {
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 12,
+    borderRadius: 10,
   },
   badgeText: {
     fontSize: 9,
-    fontWeight: '700',
+    fontWeight: '800',
   },
   bottomNav: {
     flexDirection: 'row',
