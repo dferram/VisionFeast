@@ -12,9 +12,8 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
 export default function ProfileSelectionScreen({ navigation }) {
   const navigateToProfile = (profileType) => {
-    // Example navigation, customize based on your routing
-    // navigation.navigate('RegisterStep1Screen', { profile: profileType });
-    console.log('Selected Profile:', profileType);
+    // Navegar a la pantalla de registro con el tipo de perfil
+    navigation.navigate('Register', { profileType: profileType });
   };
 
   return (

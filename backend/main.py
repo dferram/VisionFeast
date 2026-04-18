@@ -2,7 +2,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import connect_to_mongo, close_mongo_connection
-from app.api.v1 import auth, ai, test
+from app.api.v1 import auth, ai, test, register
 from app.core.config import settings
 
 app = FastAPI(
@@ -44,7 +44,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.FRONTEND_URL, "http://localhost:5173", "http://localhost:3000"],
+    allow_origins=["*"],  # En producción, especifica los orígenes permitidos
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -63,6 +63,7 @@ async def shutdown_db_client():
 app.include_router(auth.router, prefix="/api/v1")
 app.include_router(ai.router, prefix="/api/v1")
 app.include_router(test.router, prefix="/api/v1")
+app.include_router(register.router, prefix="/api/v1")
 
 @app.get("/")
 async def root():

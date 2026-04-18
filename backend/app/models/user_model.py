@@ -8,7 +8,8 @@ from pydantic import EmailStr, Field
 
 class UserRole(str, Enum):
     """User role enumeration."""
-    USER = "user"
+    CLIENT = "client"
+    COACH = "coach"
     NUTRITIONIST = "nutritionist"
     ADMIN = "admin"
 
@@ -21,17 +22,27 @@ class User(Document):
     """User document with authentication and profile information."""
     email: EmailStr
     full_name: str
+    hashed_password: Optional[str] = None
     picture: Optional[str] = None
     auth_provider: AuthProvider = AuthProvider.EMAIL
     google_id: Optional[str] = None
-    role: UserRole = UserRole.USER
+    role: UserRole = UserRole.CLIENT
     is_active: bool = True
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
     
+    # Client-specific fields
     dietary_preferences: Optional[List[str]] = []
     allergies: Optional[List[str]] = []
     health_goals: Optional[List[str]] = []
+    
+    # Professional-specific fields (coach/nutritionist)
+    license_number: Optional[str] = None
+    specialization: Optional[str] = None
+    years_experience: Optional[int] = None
+    certifications: Optional[List[str]] = []
+    bio: Optional[str] = None
+    phone: Optional[str] = None
     
     class Settings:
         """Beanie document settings."""
