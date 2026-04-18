@@ -1,4 +1,10 @@
-const API_BASE_URL = 'http://172.20.10.2:8000';
+// Backend en producción (Railway)
+const API_BASE_URL = 'https://visualfeast-production.up.railway.app';
+
+// Para testing local:
+// const API_BASE_URL = 'http://172.20.10.8:8000'; // Dispositivo físico
+// const API_BASE_URL = 'http://10.0.2.2:8000'; // Android Emulator
+// const API_BASE_URL = 'http://localhost:8000'; // iOS Simulator
 
 const request = async (endpoint, options = {}) => {
   const url = `${API_BASE_URL}/api/v1${endpoint}`;
