@@ -1,7 +1,13 @@
 // Configuración de la URL base del backend
-// En emulador Android usa 10.0.2.2, en teléfono físico usa tu IP local
-// IP actual de tu computadora: 10.40.132.153
-const API_BASE_URL = 'http://10.40.132.153:8000';
+// Cambia USE_PRODUCTION a false para usar backend local
+const USE_PRODUCTION = true;
+
+const BACKEND_URLS = {
+  production: 'https://visualfeast-production.up.railway.app',
+  local: 'http://10.40.132.153:8000'
+};
+
+const API_BASE_URL = USE_PRODUCTION ? BACKEND_URLS.production : BACKEND_URLS.local;
 
 // ── Helpers internos ─────────────────────────────────────────────────────────
 async function request(path, options = {}) {
