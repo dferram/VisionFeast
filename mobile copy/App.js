@@ -8,13 +8,8 @@ import ProfileSelectionScreen from './app/screens/ProfileSelectionScreen';
 import RegisterScreen from './app/screens/RegisterScreen';
 import LunchReviewScreen from './app/screens/Nutriologos/LunchReviewScreen';
 import PatientProfileScreen from './app/screens/Nutriologos/PatientProfileScreen';
-import DietGeneratorScreen from './app/screens/Nutriologos/DietGeneratorScreen';
-import NutritionistProfileScreen from './app/screens/Nutriologos/NutritionistProfileScreen';
 import DashboardCoach from './app/screens/entrenador/DashboardScreen';
-import ClientesCoach from './app/screens/entrenador/ClientesScreen';
-import RutinasCoach from './app/screens/entrenador/RutinasScreen';
-import PerfilCoach from './app/screens/entrenador/PerfilScreen';
-import DashboardNutri from './app/screens/Nutriologos/LunchReviewScreen'; 
+import DashboardNutri from './app/screens/Nutriologos/LunchReviewScreen'; // Usamos LunchReview como su home inicial por ahora
 
 // Registro por pasos (Clientes)
 import RegisterStep1Screen from './app/screens/Clientes/RegisterStep1Screen';
@@ -54,12 +49,7 @@ export default function App() {
         <Stack.Screen name="Dashboard"        component={DashboardScreen}        />
         <Stack.Screen name="Meals"            component={MealsScreen}            />
         <Stack.Screen name="DashboardCoach"   component={DashboardCoach}         />
-        <Stack.Screen name="ClientesCoach"    component={ClientesCoach}          />
-        <Stack.Screen name="RutinasCoach"     component={RutinasCoach}           />
-        <Stack.Screen name="PerfilCoach"      component={PerfilCoach}            />
         <Stack.Screen name="DashboardNutri"   component={DashboardNutri}         />
-        <Stack.Screen name="DietGenerator"    component={DietGeneratorScreen}    />
-        <Stack.Screen name="NutriProfile"     component={NutritionistProfileScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

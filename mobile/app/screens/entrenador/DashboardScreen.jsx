@@ -8,41 +8,25 @@ import {
   StyleSheet,
   SafeAreaView,
 } from 'react-native';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
-// ─── Assets (Figma MCP local server) ─────────────────────────────────────────
-const imgLogo         = 'http://localhost:3845/assets/2837c796e096ae9ffe18f492d83d6e6f9ae5d369.png';
-const imgBell         = 'http://localhost:3845/assets/ae87525e185b869bd1d2c1fee51e04e17a412eb3.svg';
-const imgClientsIcon  = 'http://localhost:3845/assets/b90e0a7f3fe3c864ecd86532474e5951c2f98702.svg';
-const imgCircleTrack  = 'http://localhost:3845/assets/115e4bdf6791da238aa10a06a7732fe57557509a.svg';
-const imgCircleFill   = 'http://localhost:3845/assets/cbfa65c592b437b6e8e894d6195c1194ba8c034f.svg';
-const imgNewClient    = 'http://localhost:3845/assets/8cff96d9a1d4e210e4aeb97c059e5becee17af3a.svg';
-const imgNewProgram   = 'http://localhost:3845/assets/ffd183cc594cabc1c39e669f8a34f6a166c47637.svg';
-const imgAvatarJessica = 'http://localhost:3845/assets/b1431432a406dc806e852f0e2982c98ae2b3d0f1.png';
-const imgAvatarMarcus  = 'http://localhost:3845/assets/f74bcb33db1ecbcb28536b6655356c9cebe5622f.png';
-const imgAvatarElena   = 'http://localhost:3845/assets/858e5a536c36445ca18059a2d4adf046b56d50e1.png';
-const imgNavDashboard  = 'http://localhost:3845/assets/4d2fe34b76bfe054773a179798f941d22132ebef.svg';
-const imgNavClients    = 'http://localhost:3845/assets/5353fb4883fbecd2f891fb855e67f9df3e1884a4.svg';
-const imgNavRoutines   = 'http://localhost:3845/assets/6add253f9310064e5b8a70b6b94899437d9f2fff.svg';
-const imgNavProfile    = 'http://localhost:3845/assets/1918570612048b3ad29bd1c3ecec2bec29edcb6a.svg';
-
-// ─── Data ─────────────────────────────────────────────────────────────────────
 const activities = [
   {
-    avatar: imgAvatarJessica,
+    avatar: 'https://randomuser.me/api/portraits/women/1.jpg',
     name: 'Jessica Smith',
     action: 'Completó Tren Superior A',
     time: 'HACE 12M',
     badgeType: 'green',
   },
   {
-    avatar: imgAvatarMarcus,
+    avatar: 'https://randomuser.me/api/portraits/men/2.jpg',
     name: 'Marcus Reed',
     action: 'Registró Nutrición Diaria',
     time: 'HACE 1H',
     badgeType: 'neutral',
   },
   {
-    avatar: imgAvatarElena,
+    avatar: 'https://randomuser.me/api/portraits/women/3.jpg',
     name: 'Elena Lopez',
     action: 'Omitió Movilidad Nocturna',
     time: 'HACE 4H',
@@ -50,14 +34,6 @@ const activities = [
   },
 ];
 
-const navItems = [
-  { label: 'Dashboard', icon: imgNavDashboard, key: 'dashboard' },
-  { label: 'Clientes',  icon: imgNavClients,   key: 'clientes'  },
-  { label: 'Rutinas',   icon: imgNavRoutines,  key: 'rutinas'   },
-  { label: 'Perfil',    icon: imgNavProfile,   key: 'perfil'    },
-];
-
-// ─── Badge helper ─────────────────────────────────────────────────────────────
 const badgeStyle = (type) => {
   switch (type) {
     case 'green':   return { bg: 'rgba(204,255,0,0.2)', text: '#506600' };
@@ -66,9 +42,10 @@ const badgeStyle = (type) => {
   }
 };
 
-// ─── Component ────────────────────────────────────────────────────────────────
-const DashboardScreen = ({ navigation }) => {
+const DashboardScreen = ({ navigation, route }) => {
   const [activeNav, setActiveNav] = useState('dashboard');
+  const user = route?.params?.user;
+  const token = route?.params?.token;
 
   return (
     <SafeAreaView style={styles.root}>
@@ -76,17 +53,19 @@ const DashboardScreen = ({ navigation }) => {
       {/* ── Header ── */}
       <View style={styles.header}>
         <View style={styles.headerBrand}>
-          <Image source={{ uri: imgLogo }} style={styles.headerLogo} resizeMode="cover" />
+          <View style={styles.logoCircle}>
+             <MaterialCommunityIcons name="lightning-bolt" size={24} color="#9ed02f" />
+          </View>
           <View>
             <Text style={styles.headerTitle}>
               <Text style={styles.headerTitleBlack}>Vision </Text>
               <Text style={styles.headerTitleGreen}>Feast</Text>
             </Text>
-            <Text style={styles.headerSubtitle}>Nombre entrenador</Text>
+            <Text style={styles.headerSubtitle}>{user?.full_name || 'Coach'}</Text>
           </View>
         </View>
-        <TouchableOpacity accessibilityLabel="Notificaciones">
-          <Image source={{ uri: imgBell }} style={styles.bellIcon} resizeMode="contain" />
+        <TouchableOpacity>
+          <Ionicons name="notifications-outline" size={24} color="#1a1c1e" />
         </TouchableOpacity>
       </View>
 
@@ -106,7 +85,7 @@ const DashboardScreen = ({ navigation }) => {
             {/* Stat card — Clientes Activos */}
             <View style={[styles.statCard, styles.statCardWhite]}>
               <View style={styles.statGlow} />
-              <Image source={{ uri: imgClientsIcon }} style={styles.statIcon} resizeMode="contain" />
+              <Ionicons name="people" size={28} color="#9ed02f" />
               <Text style={styles.statNumber}>24</Text>
               <Text style={styles.statLabel}>Clientes Activos</Text>
             </View>
@@ -114,8 +93,7 @@ const DashboardScreen = ({ navigation }) => {
             {/* Stat card — Cumplimiento */}
             <View style={[styles.statCard, styles.statCardWhite]}>
               <View style={styles.circleWrapper}>
-                <Image source={{ uri: imgCircleTrack }} style={styles.circleImg} resizeMode="contain" />
-                <Image source={{ uri: imgCircleFill  }} style={[styles.circleImg, styles.circleImgAbsolute]} resizeMode="contain" />
+                <Ionicons name="radio-button-off" size={48} color="#f3f3f6" style={styles.circleBg} />
                 <Text style={styles.circlePercent}>75%</Text>
               </View>
               <Text style={styles.statLabel2}>Cumplimiento</Text>
@@ -129,8 +107,8 @@ const DashboardScreen = ({ navigation }) => {
           <Text style={styles.sectionHeading}>Acciones Rápidas</Text>
           <View style={styles.actionsRow}>
             {/* Nuevo Cliente */}
-            <TouchableOpacity style={styles.btnPrimary} activeOpacity={0.8} onPress={() => navigation.navigate('NuevoCliente')}>
-              <Image source={{ uri: imgNewClient }} style={styles.btnIcon} resizeMode="contain" />
+            <TouchableOpacity style={styles.btnPrimary} activeOpacity={0.8}>
+              <Ionicons name="person-add" size={20} color="#5b7300" />
               <View>
                 <Text style={styles.btnTextGreen}>Nuevo</Text>
                 <Text style={styles.btnTextGreen}>Cliente</Text>
@@ -139,7 +117,7 @@ const DashboardScreen = ({ navigation }) => {
 
             {/* Nuevo Programa */}
             <TouchableOpacity style={styles.btnSecondary} activeOpacity={0.8}>
-              <Image source={{ uri: imgNewProgram }} style={styles.btnIcon} resizeMode="contain" />
+              <Ionicons name="document-text" size={20} color="#1a1c1e" />
               <View>
                 <Text style={styles.btnTextDark}>Nuevo</Text>
                 <Text style={styles.btnTextDark}>Programa</Text>
@@ -152,7 +130,7 @@ const DashboardScreen = ({ navigation }) => {
         <View style={styles.section}>
           <View style={styles.activityHeader}>
             <Text style={styles.sectionHeading}>Actividad de Clientes</Text>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => navigation.navigate('ClientesCoach')}>
               <Text style={styles.verTodo}>VER TODO</Text>
             </TouchableOpacity>
           </View>
@@ -178,89 +156,87 @@ const DashboardScreen = ({ navigation }) => {
 
       {/* ── Bottom Nav ── */}
       <View style={styles.bottomNav}>
-        {navItems.map((item) => {
-          const isActive = activeNav === item.key;
-          return (
-            <TouchableOpacity
-              key={item.key}
-              style={[styles.navItem, isActive && styles.navItemActive]}
-              onPress={() => setActiveNav(item.key)}
-              activeOpacity={0.7}
-            >
-              <Image source={{ uri: item.icon }} style={styles.navIcon} resizeMode="contain" />
-              <Text style={[styles.navLabel, isActive && styles.navLabelActive]}>
-                {item.label}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
+        <TouchableOpacity 
+          style={[styles.navItem, activeNav === 'dashboard' && styles.navItemActive]}
+          onPress={() => navigation.navigate('DashboardCoach')}
+        >
+          <Ionicons name="grid" size={20} color={activeNav === 'dashboard' ? "#FFF" : "#444"} />
+          <Text style={[styles.navLabel, activeNav === 'dashboard' && styles.navLabelActive]}>Dashboard</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={[styles.navItem, activeNav === 'clientes' && styles.navItemActive]}
+          onPress={() => navigation.navigate('ClientesCoach')}
+        >
+          <Ionicons name="people" size={20} color={activeNav === 'clientes' ? "#FFF" : "#444"} />
+          <Text style={[styles.navLabel, activeNav === 'clientes' && styles.navLabelActive]}>Clientes</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={[styles.navItem, activeNav === 'rutinas' && styles.navItemActive]}
+          onPress={() => navigation.navigate('RutinasCoach')}
+        >
+          <Ionicons name="fitness" size={20} color={activeNav === 'rutinas' ? "#FFF" : "#444"} />
+          <Text style={[styles.navLabel, activeNav === 'rutinas' && styles.navLabelActive]}>Rutinas</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={[styles.navItem, activeNav === 'perfil' && styles.navItemActive]}
+          onPress={() => navigation.navigate('PerfilCoach')}
+        >
+          <Ionicons name="person" size={20} color={activeNav === 'perfil' ? "#FFF" : "#444"} />
+          <Text style={[styles.navLabel, activeNav === 'perfil' && styles.navLabelActive]}>Perfil</Text>
+        </TouchableOpacity>
       </View>
 
     </SafeAreaView>
   );
 };
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: '#f9f9fc',
   },
-
-  // Header
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 24,
     paddingVertical: 16,
-    backgroundColor: 'rgba(249,249,252,0.7)',
-    shadowColor: '#1a1c1e',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.04,
-    shadowRadius: 32,
-    elevation: 3,
-    zIndex: 10,
+    backgroundColor: '#FFF',
+    elevation: 2,
   },
   headerBrand: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
   },
-  headerLogo: {
+  logoCircle: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    marginRight: 12,
+    backgroundColor: '#f0f0f0',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   headerTitle: {
     fontSize: 20,
     fontWeight: '800',
-    letterSpacing: -0.9,
-    lineHeight: 28,
   },
   headerTitleBlack: { color: '#000000' },
   headerTitleGreen: { color: '#9ed02f' },
   headerSubtitle: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: '#000000',
+    fontSize: 14,
+    color: '#666',
   },
-  bellIcon: {
-    width: 16,
-    height: 20,
-  },
-
-  // Scroll
   scroll: { flex: 1 },
   scrollContent: {
     paddingHorizontal: 24,
     paddingTop: 24,
-    paddingBottom: 16,
+    paddingBottom: 100,
     gap: 32,
   },
-
-  // Sections
   section: { gap: 16 },
   eyebrow: {
     fontSize: 10,
@@ -268,98 +244,68 @@ const styles = StyleSheet.create({
     color: '#444933',
     letterSpacing: 2,
     textTransform: 'uppercase',
-    lineHeight: 15,
   },
   sectionTitle: {
     fontSize: 30,
     fontWeight: '700',
     color: '#1a1c1e',
-    letterSpacing: -0.75,
-    lineHeight: 36,
   },
   sectionHeading: {
     fontSize: 20,
     fontWeight: '700',
     color: '#1a1c1e',
-    lineHeight: 28,
   },
-
-  // Stat cards
   statsRow: {
     flexDirection: 'row',
     gap: 16,
   },
   statCard: {
     flex: 1,
-    borderRadius: 12,
+    borderRadius: 20,
     padding: 20,
+    backgroundColor: '#ffffff',
+    elevation: 3,
     overflow: 'hidden',
-    shadowColor: '#1a1c1e',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.04,
-    shadowRadius: 32,
-    elevation: 2,
   },
-  statCardWhite: { backgroundColor: '#ffffff' },
   statGlow: {
     position: 'absolute',
     bottom: -15,
     right: -16,
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    backgroundColor: 'rgba(204,255,0,0.2)',
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(204,255,0,0.1)',
   },
-  statIcon: { width: 28, height: 25 },
   statNumber: {
     fontSize: 36,
     fontWeight: '800',
     color: '#1a1c1e',
-    lineHeight: 40,
     marginTop: 12,
   },
   statLabel: {
     fontSize: 12,
-    fontWeight: '500',
-    color: '#444933',
-    lineHeight: 16,
+    color: '#666',
   },
-
-  // Circle compliance
   circleWrapper: {
-    width: 48,
-    height: 48,
+    width: 50,
+    height: 50,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 8,
   },
-  circleImg: {
-    width: 44,
-    height: 44,
+  circlePercent: {
+    fontSize: 12,
+    fontWeight: '700',
     position: 'absolute',
   },
-  circleImgAbsolute: { position: 'absolute' },
-  circlePercent: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#1a1c1e',
-    zIndex: 1,
-  },
   statLabel2: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '800',
-    color: '#1a1c1e',
-    lineHeight: 28,
-    marginTop: 4,
+    marginTop: 8,
   },
   statMeta: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: '#444933',
-    lineHeight: 16,
+    fontSize: 11,
+    color: '#666',
   },
-
-  // Quick Actions
   actionsRow: {
     flexDirection: 'row',
     gap: 16,
@@ -368,39 +314,30 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 10,
     backgroundColor: '#9ed02f',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    borderRadius: 999,
+    padding: 16,
+    borderRadius: 20,
   },
   btnSecondary: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 10,
     backgroundColor: '#e8e8ea',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    borderRadius: 999,
+    padding: 16,
+    borderRadius: 20,
   },
-  btnIcon: { width: 22, height: 20 },
   btnTextGreen: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
     color: '#5b7300',
-    lineHeight: 20,
-    textAlign: 'center',
   },
   btnTextDark: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
     color: '#1a1c1e',
-    lineHeight: 20,
-    textAlign: 'center',
   },
-
-  // Activity
   activityHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -410,99 +347,68 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
     color: '#506600',
-    textTransform: 'uppercase',
-    letterSpacing: 1.2,
-    lineHeight: 16,
   },
   activityCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
+    gap: 12,
     backgroundColor: '#ffffff',
-    padding: 16,
-    borderRadius: 12,
-    shadowColor: '#1a1c1e',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.04,
-    shadowRadius: 32,
-    elevation: 2,
+    padding: 12,
+    borderRadius: 16,
+    marginBottom: 12,
+    elevation: 1,
   },
   avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    flexShrink: 0,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
   },
   activityInfo: {
     flex: 1,
-    minWidth: 0,
   },
   activityName: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#1a1c1e',
-    lineHeight: 20,
   },
   activityAction: {
-    fontSize: 12,
-    fontWeight: '400',
-    color: '#444933',
-    lineHeight: 16,
+    fontSize: 11,
+    color: '#666',
   },
   badge: {
     paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 999,
-    flexShrink: 0,
+    paddingVertical: 4,
+    borderRadius: 12,
   },
   badgeText: {
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    lineHeight: 15,
   },
-
-  // Bottom Nav
   bottomNav: {
-    height: 80,
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-around',
-    paddingHorizontal: 8,
-    backgroundColor: 'rgba(255,255,255,0.8)',
-    borderTopWidth: 0,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 8,
+    backgroundColor: '#FFF',
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#EEE',
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
   },
   navItem: {
     flex: 1,
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 8,
-    borderRadius: 16,
+    gap: 4,
   },
   navItemActive: {
-    backgroundColor: '#9ed02f',
-  },
-  navIcon: {
-    width: 18,
-    height: 18,
+    backgroundColor: 'transparent',
   },
   navLabel: {
-    marginTop: 2,
     fontSize: 10,
-    fontWeight: '600',
-    color: 'rgba(26,28,30,0.4)',
-    letterSpacing: -0.5,
-    textAlign: 'center',
+    color: '#666',
   },
   navLabelActive: {
-    color: 'rgba(26,28,30,0.6)',
+    color: '#9ed02f',
+    fontWeight: '700',
   },
 });
 

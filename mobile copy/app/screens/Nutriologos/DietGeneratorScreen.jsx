@@ -234,10 +234,7 @@ export default function DietGeneratorScreen({ navigation }) {
 
       {/* Floating Bottom Nav */}
       <View style={styles.bottomNav}>
-        <TouchableOpacity 
-          style={styles.navItem}
-          onPress={() => navigation.navigate('DashboardNutri')}
-        >
+        <TouchableOpacity style={styles.navItem}>
           <Ionicons name="grid-outline" size={24} color={TEXT_MID} />
           <Text style={styles.navText}>DASHBOARD</Text>
         </TouchableOpacity>
@@ -245,10 +242,7 @@ export default function DietGeneratorScreen({ navigation }) {
           <Ionicons name="people" size={24} color={GREEN} />
           <Text style={[styles.navText, { color: GREEN, fontWeight: '700' }]}>PATIENTS</Text>
         </TouchableOpacity>
-        <TouchableOpacity 
-          style={styles.navItem}
-          onPress={() => navigation.navigate('NutriProfile')}
-        >
+        <TouchableOpacity style={styles.navItem}>
           <Ionicons name="person-circle-outline" size={24} color={TEXT_MID} />
           <Text style={styles.navText}>PROFILE</Text>
         </TouchableOpacity>

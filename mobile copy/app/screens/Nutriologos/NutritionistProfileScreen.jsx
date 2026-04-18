@@ -170,17 +170,11 @@ export default function NutritionistProfileScreen({ navigation }) {
 
       {/* Floating Bottom Nav (Consistent with Dashboard/Patients screens) */}
       <View style={styles.bottomNav}>
-        <TouchableOpacity 
-          style={styles.navItem}
-          onPress={() => navigation.navigate('DashboardNutri')}
-        >
+        <TouchableOpacity style={styles.navItem}>
           <Ionicons name="grid-outline" size={24} color={TEXT_MID} />
           <Text style={styles.navText}>DASHBOARD</Text>
         </TouchableOpacity>
-        <TouchableOpacity 
-          style={styles.navItem}
-          onPress={() => navigation.navigate('DashboardNutri')} // Por ahora redirigimos al dashboard que tiene la lista
-        >
+        <TouchableOpacity style={styles.navItem}>
           <Ionicons name="people-outline" size={24} color={TEXT_MID} />
           <Text style={styles.navText}>PATIENTS</Text>
         </TouchableOpacity>
