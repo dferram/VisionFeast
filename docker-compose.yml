@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # MongoDB Database
   mongodb:
@@ -28,43 +26,27 @@ services:
       dockerfile: Dockerfile
     container_name: visionfeast-backend
     restart: unless-stopped
+    env_file:
+      - .env
     environment:
       - MONGODB_URI=mongodb://mongodb:27017/visionfeast_db
-      - GEMINI_API_KEY=${GEMINI_API_KEY}
-      - ELEVENLABS_API_KEY=${ELEVENLABS_API_KEY}
-      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
-      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
     ports:
       - "8000:8000"
     volumes:
       - ./backend:/app
       - /app/__pycache__
+      - /app/venv
     depends_on:
       mongodb:
         condition: service_healthy
     networks:
       - visionfeast-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
-
-  # Frontend (React + Vite)
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: visionfeast-frontend
-    restart: unless-stopped
-    environment:
-      - VITE_API_URL=http://localhost:8000/api/v1
-    ports:
-      - "3000:80"
-    depends_on:
-      - backend
-    networks:
-      - visionfeast-network
+      start_period: 40s
 
 networks:
   visionfeast-network:

@@ -15,20 +15,20 @@ Documentación completa para ejecutar VisionFeast usando Docker y Docker Compose
 ## 🏗️ Arquitectura de Contenedores
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                    VisionFeast Stack                     │
-├─────────────────────────────────────────────────────────┤
-│                                                          │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  │
-│  │   Frontend   │  │   Backend    │  │   MongoDB    │  │
-│  │  React+Vite  │  │   FastAPI    │  │    7.0       │  │
-│  │  Port: 3000  │  │  Port: 8000  │  │ Port: 27017  │  │
-│  │   (Nginx)    │  │              │  │              │  │
-│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘  │
-│         │                 │                 │           │
-│         └─────────────────┴─────────────────┘           │
-│                visionfeast-network                       │
-└─────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────┐
+│              VisionFeast Stack                   │
+├─────────────────────────────────────────────────┤
+│                                                  │
+│  ┌──────────────┐         ┌──────────────┐     │
+│  │   Backend    │         │   MongoDB    │     │
+│  │   FastAPI    │◄────────┤    7.0       │     │
+│  │  Port: 8000  │         │ Port: 27017  │     │
+│  │              │         │              │     │
+│  └──────────────┘         └──────────────┘     │
+│         │                                       │
+│         └───────────────────────────────────────┤
+│              visionfeast-network                │
+└─────────────────────────────────────────────────┘
 ```
 
 ### Servicios
@@ -37,16 +37,16 @@ Documentación completa para ejecutar VisionFeast usando Docker y Docker Compose
    - Imagen: `mongo:7.0`
    - Puerto: `27017`
    - Volúmenes persistentes para datos
+   - Health check configurado
 
 2. **backend**: API REST con FastAPI
    - Build: `./backend/Dockerfile`
    - Puerto: `8000`
    - Hot-reload habilitado en desarrollo
+   - Conecta con MongoDB vía red interna
 
-3. **frontend**: Aplicación web React
-   - Build: `./frontend/Dockerfile` (multi-stage)
-   - Puerto: `3000` (Nginx)
-   - Optimizado para producción
+> **Nota**: El frontend móvil se ejecuta de forma independiente (React Native/Expo).
+> Esta configuración Docker solo incluye el backend API y la base de datos.
 
 ---
 
@@ -80,6 +80,12 @@ VITE_API_URL=http://localhost:8000/api/v1
 
 ### 2. Levantar los Contenedores
 
+**Opción 1: Usando el script de PowerShell (Windows)**
+```powershell
+.\docker-start.ps1
+```
+
+**Opción 2: Comando directo**
 ```bash
 # Construir e iniciar todos los servicios
 docker-compose up --build
@@ -90,10 +96,11 @@ docker-compose up -d --build
 
 ### 3. Verificar que todo funciona
 
-- **Frontend**: http://localhost:3000
 - **Backend API**: http://localhost:8000
-- **Docs de API**: http://localhost:8000/docs
-- **MongoDB**: localhost:27017
+- **Documentación Swagger**: http://localhost:8000/docs
+- **Documentación ReDoc**: http://localhost:8000/redoc
+- **Health Check**: http://localhost:8000/health
+- **MongoDB**: mongodb://localhost:27017
 
 ---
 
@@ -107,7 +114,6 @@ docker-compose logs -f
 
 # Ver logs de un servicio específico
 docker-compose logs -f backend
-docker-compose logs -f frontend
 docker-compose logs -f mongodb
 
 # Detener todos los servicios
@@ -156,20 +162,19 @@ docker-compose exec mongodb mongorestore --db=visionfeast_db /data/backup/vision
 ```
 VisionFeast/
 ├── docker-compose.yml          # Orquestación de servicios
+├── docker-start.ps1            # Script para iniciar (Windows)
+├── docker-stop.ps1             # Script para detener (Windows)
 ├── .dockerignore               # Archivos a ignorar (root)
 ├── .env                        # Variables de entorno (no commitear)
 ├── .env.example                # Plantilla de variables
 │
 ├── backend/
 │   ├── Dockerfile              # Imagen del backend
-│   ├── .dockerignore           # Archivos a ignorar
 │   ├── requirements.txt        # Dependencias Python
-│   └── ...
+│   ├── main.py                 # Entry point de FastAPI
+│   └── app/                    # Código de la aplicación
 │
-└── frontend/
-    ├── Dockerfile              # Imagen del frontend (multi-stage)
-    ├── nginx.conf              # Configuración de Nginx
-    ├── .dockerignore           # Archivos a ignorar
+└── mobile/                     # App móvil (no incluida en Docker)
     └── ...
 ```
 
@@ -179,12 +184,11 @@ VisionFeast/
 
 ### Hot Reload
 
-Ambos servicios tienen hot-reload habilitado:
+El backend tiene hot-reload habilitado:
 
 - **Backend**: Uvicorn con `--reload`
-- **Frontend**: Vite dev server (en desarrollo) o Nginx (en producción)
 
-Los cambios en el código se reflejan automáticamente sin necesidad de reconstruir.
+Los cambios en el código del backend se reflejan automáticamente sin necesidad de reconstruir el contenedor.
 
 ### Instalar Nuevas Dependencias
 
@@ -197,16 +201,12 @@ echo "nueva-libreria==1.0.0" >> backend/requirements.txt
 docker-compose up -d --build backend
 ```
 
-**Frontend (Node):**
+**Mobile (React Native/Expo):**
 ```bash
-# 1. Entrar al contenedor
-docker-compose exec frontend sh
-
-# 2. Instalar dependencia
+# La app móvil se ejecuta fuera de Docker
+# Instala dependencias normalmente en el directorio mobile/
+cd mobile
 npm install nueva-libreria
-
-# 3. Salir y reconstruir
-docker-compose up -d --build frontend
 ```
 
 ---
