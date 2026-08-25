@@ -302,7 +302,11 @@ Las contribuciones son bienvenidas. Por favor:
 
 ## 👥 Equipo
 
-- **Daniel Ferram** - Full Stack Developer - [@dferram](https://github.com/dferram)
+- **Fernando Ramírez** - Full Stack Developer - [@dferram](https://github.com/dferram)
+- **Lu Álvarez** - Front-end developer and UX/UI designer - [@lubazaldua](https://github.com/lubazaldua)
+- **Ángel Cenobio** - Front-end developer and UX/UI designer - [@angelcenarr](https://github.com/angelcenarr)
+- **Mar Araújo** - Front-end developer and UX/UI designer - [@mararaujo04](https://github.com/mararaujo04)
+- **Alan Xotla** - Back/end developer - [@alanxotla123/maker](https://github.com/alanxotla123-maker)
 
 ---
 
