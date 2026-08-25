@@ -1,8 +1,8 @@
 # VisionFeast Mobile - React Native con Expo
 
-App móvil de VisionFeast con las 3 interfaces de onboarding generadas desde Figma.
+App móvil de VisionFeast con las interfaces generadas desde Figma.
 
-## 🚀 Instalación y Ejecución
+## Instalación y Ejecución
 
 ### 1. Instalar dependencias
 ```bash
@@ -12,30 +12,28 @@ npm install
 
 ### 2. Iniciar el proyecto
 
-**Opción A: Expo Go (Recomendado para desarrollo)**
+Opción A: Expo Go (Recomendado para desarrollo)
 ```bash
 npm start
 ```
-Luego escanea el código QR con:
-- **iOS**: Cámara del iPhone
-- **Android**: App Expo Go
+Luego escanea el código QR con la cámara de iOS o la App Expo Go en Android.
 
-**Opción B: Emulador Android**
+Opción B: Emulador Android
 ```bash
 npm run android
 ```
 
-**Opción C: Simulador iOS** (solo macOS)
+Opción C: Simulador iOS (solo macOS)
 ```bash
 npm run ios
 ```
 
-**Opción D: Web** (para preview rápido)
+Opción D: Web (para preview rápido)
 ```bash
 npm run web
 ```
 
-## 📱 Pantallas Implementadas
+## Pantallas Implementadas
 
 ### 1. SplashScreen
 - Logo de VisionFeast centrado
@@ -45,73 +43,45 @@ npm run web
 ### 2. WelcomeScreen
 - Imagen de fondo con alimentos
 - Card blanco redondeado
-- Botón "Comenzar"
-- Link "Inicia sesión"
+- Botón Comenzar
+- Link Inicia sesión
 
 ### 3. LoginScreen
 - Formulario completo de login
 - Campos de email y contraseña
-- Checkbox "Recordarme"
-- Link "¿Olvidaste tu contraseña?"
+- Checkbox Recordarme
+- Link Olvidaste tu contraseña
 - Link para registro
 
-## 🎨 Fidelidad al Diseño de Figma
+## Fidelidad al Diseño de Figma
 
-✅ **Colores exactos:**
-- Verde principal: `#9ed02f`
-- Verde secundario: `#87b128`
-- Negro: `#000000`
-- Blanco: `#ffffff`
+- Colores exactos: Verde principal (#9ed02f), Verde secundario (#87b128), Negro, Blanco
+- Tipografía: Estilos ajustados según especificaciones
+- Dimensiones: Radios de borde de 30px y tamaños de logo precisos
+- Imágenes: Integradas fluidamente en las interfaces
 
-✅ **Tipografía:**
-- Título: 40px, peso 800
-- Subtítulo: 20px, peso 600
-- Botones: 18-21px, peso 600
+## Estructura del Proyecto
 
-✅ **Dimensiones:**
-- Logo grande: 192x192px
-- Logo pequeño: 102x102px
-- Border radius: 30px
-- Sombras aplicadas
+- app/screens/ : Contiene las pantallas principales (SplashScreen, WelcomeScreen, LoginScreen)
+- assets/ : Recursos estáticos, fuentes e imágenes
 
-✅ **Imágenes:**
-- Cargadas directamente desde Figma API
-- URLs válidas por 7 días
+## Tecnologías
 
-## 📦 Estructura del Proyecto
+- React Native 0.76.5
+- Expo ~52.0.0
+- React Navigation 6.x
+- React Native Safe Area Context
+- React Native Screens
 
-```
-mobile/
-├── app/
-│   └── screens/
-│       ├── SplashScreen.jsx
-│       ├── WelcomeScreen.jsx
-│       └── LoginScreen.jsx
-├── assets/
-├── App.js
-├── app.json
-├── package.json
-└── babel.config.js
-```
+## Notas
 
-## 🔧 Tecnologías
-
-- **React Native** 0.76.5
-- **Expo** ~52.0.0
-- **React Navigation** 6.x
-- **React Native Safe Area Context**
-- **React Native Screens**
-
-## 📝 Notas
-
-- Las imágenes de Figma expiran en 7 días. Para producción, descárgalas y guárdalas en `assets/`
 - La navegación está configurada con React Navigation Native Stack
 - El diseño es responsive y se adapta a diferentes tamaños de pantalla
-- Usa `KeyboardAvoidingView` en LoginScreen para mejor UX
+- Usa KeyboardAvoidingView en LoginScreen para mejor experiencia de usuario
 
-## 🎯 Próximos Pasos
+## Próximos Pasos
 
-1. Descargar imágenes localmente
+1. Descargar imágenes localmente para producción
 2. Implementar pantalla de registro (SignupScreen)
 3. Conectar con backend de autenticación
 4. Agregar validación de formularios
